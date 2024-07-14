@@ -29,18 +29,19 @@ def get_color(snr):
     color_map = mcolors.LinearSegmentedColormap.from_list('custom', ['green', 'yellow', 'red'])
     return mcolors.to_hex(color_map(snr / 30))
 
-def create_map(filtered_df, spotter_coords, grid_square_coords):
+def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons):
     m = folium.Map(location=[39.8283, -98.5795], zoom_start=4)
-    
-    # Add small black dots at every beacon's location
-    for spotter, coords in spotter_coords.items():
-        folium.CircleMarker(
-            location=coords,
-            radius=2,  # Small black dot
-            color='black',
-            fill=True,
-            fill_color='black'
-        ).add_to(m)
+
+    # Add small black dots at every beacon's location if show_all_beacons is True
+    if show_all_beacons:
+        for spotter, coords in spotter_coords.items():
+            folium.CircleMarker(
+                location=coords,
+                radius=2,  # Small black dot
+                color='black',
+                fill=True,
+                fill_color='black'
+            ).add_to(m)
 
     # Add the spotter locations to the map with varying marker sizes based on SNR
     for _, row in filtered_df.iterrows():
@@ -57,28 +58,71 @@ def create_map(filtered_df, spotter_coords, grid_square_coords):
                 fill_color=get_color(snr)
             ).add_to(m)
 
+    # Add grid square marker
     folium.Marker(
         location=grid_square_coords,
         icon=folium.Icon(icon='star', color='red'),
         popup=f'Your Location: {grid_square}'
     ).add_to(m)
     
+    # Define colors for different ham bands
+    band_colors = {
+        '160m': 'blue',
+        '80m': 'green',
+        '40m': 'teal',
+        '30m': 'purple',
+        '20m': 'darkblue',  # Set 20m to dark blue
+        '17m': 'orange',
+        '15m': 'lime',
+        '12m': 'pink',
+        '10m': 'red',
+        '6m': 'magenta'
+    }
+
+    # Add lines with different colors based on ham bands
     for _, row in filtered_df.iterrows():
         spotter = row['callsign']
         if spotter in spotter_coords:
             coords = spotter_coords[spotter]
+            band = row['band']
+            color = band_colors.get(band, 'blue')  # Default to blue if band not found
             folium.PolyLine(
                 locations=[grid_square_coords, coords],
-                color='blue',
+                color=color,
                 weight=1
             ).add_to(m)
+    
+    # Add a smaller legend
+    legend_html = '''
+     <div style="position: fixed; 
+     bottom: 20px; left: 20px; width: 120px; height: 180px; 
+     border:1px solid grey; z-index:9999; font-size:10px;
+     background-color:white;
+     ">
+     &nbsp; <b>Legend</b> <br>
+     &nbsp; 160m &nbsp; <i class="fa fa-circle" style="color:blue"></i><br>
+     &nbsp; 80m &nbsp; <i class="fa fa-circle" style="color:green"></i><br>
+     &nbsp; 40m &nbsp; <i class="fa fa-circle" style="color:teal"></i><br>
+     &nbsp; 30m &nbsp; <i class="fa fa-circle" style="color:purple"></i><br>
+     &nbsp; 20m &nbsp; <i class="fa fa-circle" style="color:darkblue"></i><br>
+     &nbsp; 17m &nbsp; <i class="fa fa-circle" style="color:orange"></i><br>
+     &nbsp; 15m &nbsp; <i class="fa fa-circle" style="color:lime"></i><br>
+     &nbsp; 12m &nbsp; <i class="fa fa-circle" style="color:pink"></i><br>
+     &nbsp; 10m &nbsp; <i class="fa fa-circle" style="color:red"></i><br>
+     &nbsp; 6m &nbsp; <i class="fa fa-circle" style="color:magenta"></i><br>
+     </div>
+     '''
+    m.get_root().html.add_child(folium.Element(legend_html))
+
     return m
 
+# Streamlit app
 st.title("RBN Signal Map Generator")
 
 callsign = st.text_input("Enter your callsign:")
 date = st.text_input("Enter the date (YYYYMMDD):")
 grid_square = st.text_input("Enter your grid square:")
+show_all_beacons = st.checkbox("Show all reverse beacons")
 
 if st.button("Generate Map"):
     try:
@@ -90,7 +134,7 @@ if st.button("Generate Map"):
         filtered_df['snr'] = pd.to_numeric(filtered_df['db'], errors='coerce')
         
         spotter_coords = {
-            'OZ1AAB': (55.7, 12.6),
+           'OZ1AAB': (55.7, 12.6),
             'HA1VHF': (47.9, 19.2),
             'W6YX': (37.4, -122.2),
             'KV4TT': (36.0, -79.8),
@@ -445,7 +489,7 @@ if st.button("Generate Map"):
         grid = Grid(grid_square)
         grid_square_coords = (grid.lat, grid.long)
         
-        m = create_map(filtered_df, spotter_coords, grid_square_coords)
+        m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons)
         m.save('map.html')
         st.write("Map generated successfully!")
         
