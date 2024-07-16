@@ -1,7 +1,5 @@
 # RBN Signal Mapper
 
-![RBN Signal Mapper](https://github.com/K5OHY/RBN_Map/raw/main/path/to/screenshot.png)
-
 ## Overview
 
 The RBN Signal Mapper is a web application that visualizes Reverse Beacon Network (RBN) data on an interactive map. This tool allows amateur radio operators to visualize the reception of their signals across the world based on RBN data.
@@ -46,15 +44,11 @@ The RBN Signal Mapper is a web application that visualizes Reverse Beacon Networ
 
 ## Example
 
-![Example Map](https://github.com/K5OHY/RBN_Map/raw/main/path/to/example_map.png)
+![Example Map](path/to/example_map.png)
 
 ## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss any changes or improvements.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
@@ -80,7 +74,3 @@ For any questions or inquiries, please contact [your-email@example.com](mailto:y
 
 #### v1.0.0
 - Initial release with basic RBN data visualization features.
-
----
-
-![Footer Image](https://github.com/K5OHY/RBN_Map/raw/main/path/to/footer_image.png)
