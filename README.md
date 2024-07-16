@@ -61,7 +61,7 @@ Special thanks to the developers and contributors of the following libraries:
 
 ## Contact
 
-For any questions or inquiries, please contact [your-email@example.com](mailto:haletd@gmail.com).
+For any questions or inquiries, please contact [haletd@gmail.com](mailto:haletd@gmail.com).
 
 ---
 
