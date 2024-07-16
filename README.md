@@ -44,7 +44,7 @@ The RBN Signal Mapper is a web application that visualizes Reverse Beacon Networ
 
 ## Example
 
-![Example Map](path/to/example_map.png)
+[View Example Map](path/to/example_map.html)
 
 ## Contributing
 
@@ -61,7 +61,7 @@ Special thanks to the developers and contributors of the following libraries:
 
 ## Contact
 
-For any questions or inquiries, please contact [your-email@example.com](mailto:your-email@example.com).
+For any questions or inquiries, please contact [your-email@example.com](mailto:haletd@gmail.com).
 
 ---
 
