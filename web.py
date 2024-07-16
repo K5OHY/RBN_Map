@@ -1,12 +1,15 @@
+import requests
 import pandas as pd
 import folium
 import matplotlib.colors as mcolors
 from gridtools import Grid
-import requests
 import zipfile
 import os
 from io import BytesIO
 import streamlit as st
+from datetime import datetime, timedelta, timezone
+
+DEFAULT_GRID_SQUARE = "DM81wx"  # Default grid square location
 
 def download_and_extract_rbn_data(date):
     url = f'https://data.reversebeacon.net/rbn_history/{date}.zip'
@@ -149,10 +152,15 @@ def process_pasted_data(pasted_data):
     lines = [line.strip() for line in lines if line.strip()]
     
     data = []
-    for line in lines[1:]:
+    for line in lines:
         parts = line.split()
+        # Ensure there are enough parts in the line
+        if len(parts) < 14:
+            print(f"Skipping incomplete row: {line}")
+            continue  # Skip incomplete rows
+        
         spotter = parts[0]
-        spotted = parts[1]
+        dx = parts[1]
         distance = parts[2] + ' ' + parts[3]
         freq = parts[4]
         mode = parts[5]
@@ -160,8 +168,11 @@ def process_pasted_data(pasted_data):
         snr = parts[7] + ' ' + parts[8]
         speed = parts[9] + ' ' + parts[10]
         time = parts[11] + ' ' + parts[12] + ' ' + parts[13]
-        seen = ' '.join(parts[14:])
-        data.append([spotter, spotted, distance, freq, mode, type_, snr, speed, time, seen])
+        seen = ' '.join(parts[14:]) if len(parts) > 14 else ''
+        
+        # Only add rows with all required fields
+        if all([spotter, dx, distance, freq, mode, type_, snr, speed, time]):
+            data.append([spotter, dx, distance, freq, mode, type_, snr, speed, time, seen])
     
     df = pd.DataFrame(data, columns=['spotter', 'dx', 'distance', 'freq', 'mode', 'type', 'snr', 'speed', 'time', 'seen'])
     
@@ -192,7 +203,7 @@ def main():
     """)
 
     callsign = st.text_input("Enter Callsign:")
-    grid_square = st.text_input("Enter Grid Square:")
+    grid_square = st.text_input("Enter Grid Square (optional):")
     show_all_beacons = st.checkbox("Show all reverse beacons")
 
     data_source = st.radio(
@@ -209,10 +220,34 @@ def main():
         try:
             use_band_column = False
             file_date = ""
+            
+            # Convert callsign to uppercase
+            if callsign:
+                callsign = callsign.upper()
+                
+            # Convert grid square to proper format
+            if grid_square:
+                grid_square = grid_square[:2].upper() + grid_square[2:]
+            
+            if not grid_square:
+                st.warning(f"No grid square provided, using default: {DEFAULT_GRID_SQUARE}")
+                grid_square = DEFAULT_GRID_SQUARE
+            
+            # Check if pasted data is provided or not
+            if data_source == 'Paste RBN data' and not pasted_data.strip():
+                # If no pasted data, use the download logic
+                data_source = 'Download RBN data by date'
+                date = ""  # Ensure date is initialized
+            
             if data_source == 'Paste RBN data' and pasted_data.strip():
                 df = process_pasted_data(pasted_data)
                 st.write("Using pasted data.")
-            elif data_source == 'Download RBN data by date' and date.strip():
+            elif data_source == 'Download RBN data by date':
+                if not date.strip():
+                    # Calculate yesterday's date
+                    yesterday = datetime.now(timezone.utc) - timedelta(1)
+                    date = yesterday.strftime('%Y%m%d')
+                    st.write(f"Using latest available date: {date}")
                 csv_filename = download_and_extract_rbn_data(date)
                 df = process_downloaded_data(csv_filename)
                 os.remove(csv_filename)
