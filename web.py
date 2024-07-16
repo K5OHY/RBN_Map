@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 import folium
 import matplotlib.colors as mcolors
-from gridtools import Grid
 import zipfile
 import os
 from io import BytesIO
@@ -169,6 +168,22 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
 
     return m
 
+def grid_square_to_latlon(grid_square):
+    upper_alpha = "ABCDEFGHIJKLMNOPQR"
+    digits = "0123456789"
+    lower_alpha = "abcdefghijklmnopqrstuvwx"
+
+    grid_square = grid_square.upper()
+
+    lon = -180 + (upper_alpha.index(grid_square[0]) * 20) + (digits.index(grid_square[2]) * 2)
+    lat = -90 + (upper_alpha.index(grid_square[1]) * 10) + (digits.index(grid_square[3]) * 1)
+
+    if len(grid_square) == 6:
+        lon += (lower_alpha.index(grid_square[4].lower()) + 0.5) / 12
+        lat += (lower_alpha.index(grid_square[5].lower()) + 0.5) / 24
+
+    return lat, lon
+
 def process_pasted_data(pasted_data):
     lines = pasted_data.split('\n')
     lines = [line.strip() for line in lines if line.strip()]
@@ -176,10 +191,9 @@ def process_pasted_data(pasted_data):
     data = []
     for line in lines:
         parts = line.split()
-        # Ensure there are enough parts in the line
         if len(parts) < 14:
             print(f"Skipping incomplete row: {line}")
-            continue  # Skip incomplete rows
+            continue
         
         spotter = parts[0]
         dx = parts[1]
@@ -192,7 +206,6 @@ def process_pasted_data(pasted_data):
         time = parts[11] + ' ' + parts[12] + ' ' + parts[13]
         seen = ' '.join(parts[14:]) if len(parts) > 14 else ''
         
-        # Only add rows with all required fields
         if all([spotter, dx, distance, freq, mode, type_, snr, speed, time]):
             data.append([spotter, dx, distance, freq, mode, type_, snr, speed, time, seen])
     
@@ -201,7 +214,6 @@ def process_pasted_data(pasted_data):
     df['snr'] = df['snr'].str.split().str[0].astype(float)
     df['freq'] = df['freq'].astype(float)
     
-    # Derive band column if not present
     if 'band' not in df.columns:
         df['band'] = df['freq'].apply(get_band)
     
@@ -271,11 +283,9 @@ def main():
             use_band_column = False
             file_date = ""
             
-            # Convert callsign to uppercase
             if callsign:
                 callsign = callsign.upper()
                 
-            # Convert grid square to proper format
             if grid_square:
                 grid_square = grid_square[:2].upper() + grid_square[2:]
             
@@ -283,18 +293,16 @@ def main():
                 st.warning(f"No grid square provided, using default: {DEFAULT_GRID_SQUARE}")
                 grid_square = DEFAULT_GRID_SQUARE
             
-            # Check if pasted data is provided or not
             if data_source == 'Paste RBN data' and not pasted_data.strip():
-                # If no pasted data, use the download logic
                 data_source = 'Download RBN data by date'
-                date = ""  # Ensure date is initialized
+                date = ""
             
             if data_source == 'Paste RBN data' and pasted_data.strip():
                 df = process_pasted_data(pasted_data)
                 st.write("Using pasted data.")
+                file_date = datetime.now(timezone.utc).strftime("%Y%m%d")
             elif data_source == 'Download RBN data by date':
                 if not date.strip():
-                    # Calculate yesterday's date
                     yesterday = datetime.now(timezone.utc) - timedelta(1)
                     date = yesterday.strftime('%Y%m%d')
                     st.write(f"Using latest available date: {date}")
@@ -314,13 +322,16 @@ def main():
                 row['callsign']: (row['latitude'], row['longitude']) for _, row in spotter_coords_df.iterrows()
             }
             
-            grid = Grid(grid_square)
-            grid_square_coords = (grid.lat, grid.long)
-            
+            if grid_square:
+                # Convert grid square to latitude and longitude using grid_square_to_latlon method
+                grid_square_coords = grid_square_to_latlon(grid_square)
+            else:
+                grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
+
             stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
             
+            map_filename = f"RBN_signal_map_{file_date}.html"
             m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column, callsign, stats)
-            map_filename = f"RBN_signal_map_{file_date}.html" if file_date else "RBN_signal_map.html"
             m.save(map_filename)
             st.write("Map generated successfully!")
             
