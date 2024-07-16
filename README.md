@@ -1,102 +1,86 @@
-
 # RBN Signal Mapper
 
-This application visualizes Reverse Beacon Network (RBN) signal data on an interactive map. It allows users to either paste RBN data or download it by a specified date, and then generates a map displaying signal spots with various features.
+![RBN Signal Mapper](https://github.com/K5OHY/RBN_Map/raw/main/path/to/screenshot.png)
+
+## Overview
+
+The RBN Signal Mapper is a web application that visualizes Reverse Beacon Network (RBN) data on an interactive map. This tool allows amateur radio operators to visualize the reception of their signals across the world based on RBN data.
 
 ## Features
-- Download and extract RBN data by date.
-- Process pasted or downloaded RBN data.
-- Visualize RBN spots on an interactive map using Folium.
-- Display signal-to-noise ratio (SNR) and band information with color coding.
-- Option to show all reverse beacons on the map.
+
+- **Download RBN Data**: Fetch and visualize the latest RBN data by date.
+- **Manual Data Input**: Paste custom RBN data for visualization.
+- **Spotter Visualization**: Option to show all reverse beacons on the map.
+- **Statistics Display**: View statistics such as total spots, max distance, max SNR, average SNR, and band breakdown.
+- **Color-coded Bands**: Different bands are color-coded for easy identification on the map.
+- **Interactive Map**: Generated maps are interactive and can be downloaded for offline viewing.
 
 ## Installation
 
-### Prerequisites
-- Python 3.7+
-- pip (Python package installer)
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/K5OHY/RBN_Map.git
+    cd RBN_Map
+    ```
 
-### Required Python Packages
-- pandas
-- folium
-- matplotlib
-- requests
-- zipfile
-- streamlit
-- gridtools
+2. **Install the required dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-You can install the required packages using the following command:
-```bash
-pip install pandas folium matplotlib requests streamlit
-```
-
-### Setting up the Environment
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/rbn-signal-mapper.git
-   cd rbn-signal-mapper
-   ```
-
-2. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. **Run the application**:
+    ```bash
+    streamlit run app.py
+    ```
 
 ## Usage
 
-### Running the Application
-To start the Streamlit application, run the following command:
-```bash
-streamlit run app.py
-```
+1. **Enter Callsign**: Enter your callsign in the provided text box.
+2. **Enter Grid Square (optional)**: Enter your grid square. If left blank, a default grid square will be used.
+3. **Select Data Source**:
+    - **Paste RBN Data**: Manually paste RBN data in the provided text area.
+    - **Download RBN Data by Date**: Enter the date (YYYYMMDD) to download RBN data for that day.
+4. **Show All Reverse Beacons (optional)**: Check this option to display all reverse beacons on the map.
+5. **Generate Map**: Click the "Generate Map" button to create the map.
+6. **Download Map**: Use the download button to save the generated map as an HTML file.
 
-### Application Instructions
-1. Enter your callsign and grid square.
-2. Select the data source:
-   - Paste RBN data manually.
-   - Download RBN data by date.
-3. Optionally, choose to show all reverse beacons.
-4. Click 'Generate Map' to visualize the signal map.
-5. You can download the generated map using the provided download button.
+## Example
 
-## Code Overview
-
-### Main Functions
-
-#### `download_and_extract_rbn_data(date)`
-Downloads and extracts RBN data for the specified date.
-
-#### `get_color(snr)`
-Returns a color hex code based on the SNR value.
-
-#### `get_band(freq)`
-Determines the band based on the frequency.
-
-#### `create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column)`
-Generates an interactive map with the filtered RBN data.
-
-#### `process_pasted_data(pasted_data)`
-Processes the manually pasted RBN data.
-
-#### `process_downloaded_data(filename)`
-Processes the downloaded RBN data file.
-
-### Streamlit Application
-The Streamlit application is defined in the `main()` function. It provides the user interface for entering the callsign, grid square, selecting the data source, and generating the map.
-
-## License
-This project is licensed under the MIT License.
-
-## Acknowledgements
-- [Reverse Beacon Network](https://reversebeacon.net/)
-- [Folium](https://python-visualization.github.io/folium/)
-- [Streamlit](https://streamlit.io/)
+![Example Map](https://github.com/K5OHY/RBN_Map/raw/main/path/to/example_map.png)
 
 ## Contributing
-Contributions are welcome! Please open an issue or submit a pull request for any changes.
+
+Contributions are welcome! Please submit a pull request or open an issue to discuss any changes or improvements.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+Special thanks to the developers and contributors of the following libraries:
+- [Streamlit](https://streamlit.io/)
+- [Pandas](https://pandas.pydata.org/)
+- [Folium](https://python-visualization.github.io/folium/)
+- [GridTools](https://pypi.org/project/gridtools/)
+- [Geopy](https://geopy.readthedocs.io/)
+
+## Contact
+
+For any questions or inquiries, please contact [your-email@example.com](mailto:your-email@example.com).
+
+---
+
+### Recent Updates
+
+#### v1.1.0
+- Enhanced legend alignment and statistics box.
+- Added dynamic height adjustment for the statistics box.
+- Improved error handling for incomplete data.
+
+#### v1.0.0
+- Initial release with basic RBN data visualization features.
+
+---
+
+![Footer Image](https://github.com/K5OHY/RBN_Map/raw/main/path/to/footer_image.png)
