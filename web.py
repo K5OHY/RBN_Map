@@ -4,6 +4,7 @@ import folium
 import matplotlib.colors as mcolors
 import zipfile
 import os
+import re
 from io import BytesIO
 import streamlit as st
 from datetime import datetime, timedelta, timezone
@@ -251,101 +252,117 @@ def calculate_statistics(filtered_df, grid_square_coords, spotter_coords):
     }
 
 def main():
-    st.title("RBN Signal Mapper")
+    st.set_page_config(layout="wide", page_title="RBN Signal Mapper", page_icon=":radio:")
 
-    st.markdown("""
-    **Instructions:**
-    1. Enter a callsign and grid square.
-    2. Select the data source:
-        - Paste RBN data manually.
-        - Download RBN data by date.
-    3. Optionally, choose to show all reverse beacons.
-    4. Click 'Generate Map' to visualize the signal map.
-    5. You can download the generated map using the provided download button.
-    """)
+    # Center the title
+    st.markdown("<h1 style='text-align: center;'>RBN Signal Mapper</h1>", unsafe_allow_html=True)
 
-    callsign = st.text_input("Enter Callsign:")
-    grid_square = st.text_input("Enter Grid Square (optional):")
-    show_all_beacons = st.checkbox("Show all reverse beacons")
+    if 'map_html' not in st.session_state:
+        st.session_state.map_html = None
 
-    data_source = st.radio(
-        "Select data source",
-        ('Paste RBN data', 'Download RBN data by date')
-    )
+    with st.sidebar:
+        st.header("Input Data")
+        callsign = st.text_input("Enter Callsign:")
+        grid_square = st.text_input("Enter Grid Square (optional):")
+        show_all_beacons = st.checkbox("Show all reverse beacons")
+        data_source = st.radio(
+            "Select data source",
+            ('Paste RBN data', 'Download RBN data by date')
+        )
 
-    if data_source == 'Paste RBN data':
-        pasted_data = st.text_area("Paste RBN data here:")
-    else:
-        date = st.text_input("Enter the date (YYYYMMDD):")
-    
-    if st.button("Generate Map"):
+        if data_source == 'Paste RBN data':
+            pasted_data = st.text_area("Paste RBN data here:")
+        else:
+            date = st.text_input("Enter the date (YYYYMMDD):")
+
+        generate_map = st.button("Generate Map")
+
+        with st.expander("Instructions", expanded=False):
+            st.markdown("""
+            **Instructions:**
+            1. Enter a callsign and grid square.
+            2. Select the data source:
+                - Paste RBN data manually.
+                - Download RBN data by date.
+            3. Optionally, choose to show all reverse beacons.
+            4. Click 'Generate Map' to visualize the signal map.
+            5. You can download the generated map using the provided download button.
+            """)
+
+    if generate_map:
         try:
-            use_band_column = False
-            file_date = ""
-            
-            if callsign:
-                callsign = callsign.upper()
-                
-            if grid_square:
-                grid_square = grid_square[:2].upper() + grid_square[2:]
-            
-            if not grid_square:
-                st.warning(f"No grid square provided, using default: {DEFAULT_GRID_SQUARE}")
-                grid_square = DEFAULT_GRID_SQUARE
-            
-            if data_source == 'Paste RBN data' and not pasted_data.strip():
-                data_source = 'Download RBN data by date'
-                date = ""
-            
-            if data_source == 'Paste RBN data' and pasted_data.strip():
-                df = process_pasted_data(pasted_data)
-                st.write("Using pasted data.")
-                file_date = datetime.now(timezone.utc).strftime("%Y%m%d")
-            elif data_source == 'Download RBN data by date':
-                if not date.strip():
-                    yesterday = datetime.now(timezone.utc) - timedelta(1)
-                    date = yesterday.strftime('%Y%m%d')
-                    st.write(f"Using latest available date: {date}")
-                csv_filename = download_and_extract_rbn_data(date)
-                df = process_downloaded_data(csv_filename)
-                os.remove(csv_filename)
-                use_band_column = True
-                file_date = date
-                st.write("Using downloaded data.")
-            else:
-                st.error("Please provide the necessary data.")
+            with st.spinner("Generating map..."):
+                use_band_column = False
+                file_date = ""
 
-            filtered_df = df[df['dx'] == callsign].copy()
-            
-            spotter_coords_df = pd.read_csv('spotter_coords.csv')
-            spotter_coords = {
-                row['callsign']: (row['latitude'], row['longitude']) for _, row in spotter_coords_df.iterrows()
-            }
-            
-            if grid_square:
-                # Convert grid square to latitude and longitude using grid_square_to_latlon method
-                grid_square_coords = grid_square_to_latlon(grid_square)
-            else:
-                grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
+                if callsign:
+                    callsign = callsign.upper()
 
-            stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
-            
-            map_filename = f"RBN_signal_map_{file_date}.html"
-            m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column, callsign, stats)
-            m.save(map_filename)
-            st.write("Map generated successfully!")
-            
-            st.components.v1.html(open(map_filename, 'r').read(), height=700)
+                if grid_square:
+                    grid_square = grid_square[:2].upper() + grid_square[2:]
 
-            with open(map_filename, "rb") as file:
-                st.download_button(
-                    label="Download Map",
-                    data=file,
-                    file_name=map_filename,
-                    mime="text/html"
-                )
+                if not grid_square:
+                    st.warning(f"No grid square provided, using default: {DEFAULT_GRID_SQUARE}")
+                    grid_square = DEFAULT_GRID_SQUARE
+
+                if data_source == 'Paste RBN data' and not pasted_data.strip():
+                    data_source = 'Download RBN data by date'
+                    date = ""
+
+                if data_source == 'Paste RBN data' and pasted_data.strip():
+                    df = process_pasted_data(pasted_data)
+                    st.write("Using pasted data.")
+                    file_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+                elif data_source == 'Download RBN data by date':
+                    if not date.strip():
+                        yesterday = datetime.now(timezone.utc) - timedelta(1)
+                        date = yesterday.strftime('%Y%m%d')
+                        st.write(f"Using latest available date: {date}")
+                    csv_filename = download_and_extract_rbn_data(date)
+                    df = process_downloaded_data(csv_filename)
+                    os.remove(csv_filename)
+                    use_band_column = True
+                    file_date = date
+                    st.write("Using downloaded data.")
+                else:
+                    st.error("Please provide the necessary data.")
+
+                filtered_df = df[df['dx'] == callsign].copy()
+
+                spotter_coords_df = pd.read_csv('spotter_coords.csv')
+                spotter_coords = {
+                    row['callsign']: (row['latitude'], row['longitude']) for _, row in spotter_coords_df.iterrows()
+                }
+
+                if grid_square:
+                    grid_square_coords = grid_square_to_latlon(grid_square)
+                else:
+                    grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
+
+                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
+
+                m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column, callsign, stats)
+                map_html = m._repr_html_()
+                st.session_state.map_html = map_html
+                st.session_state.file_date = file_date
+                st.write("Map generated successfully!")
         except Exception as e:
             st.error(f"Error: {e}")
+
+    if st.session_state.map_html:
+        st.components.v1.html(st.session_state.map_html, height=700)
+
+        map_filename = f"RBN_signal_map_{st.session_state.file_date}.html"
+        with open(map_filename, "w") as file:
+            file.write(st.session_state.map_html)
+
+        with open(map_filename, "rb") as file:
+            st.download_button(
+                label="Download Map",
+                data=file,
+                file_name=map_filename,
+                mime="text/html"
+            )
 
 if __name__ == "__main__":
     main()
