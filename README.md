@@ -7,6 +7,8 @@ RBN Signal Mapper is a web application designed to visualize Reverse Beacon Netw
 
 - Visualize RBN data on a map
 - Option to show all reverse beacons
+- Filter data by specific bands
+- Display UTC time of spots in the popup
 - Download the generated map
 - Automatic download of the latest available RBN data if date input is left blank
 
@@ -50,6 +52,7 @@ RBN Signal Mapper is a web application designed to visualize Reverse Beacon Netw
    - Enter a callsign and grid square (optional).
    - Select the data source (paste RBN data manually or download by date).
    - Optionally, choose to show all reverse beacons.
+   - Select the band to filter the data (or choose 'All' for no filter).
    - Click "Generate Map" to visualize the signal map.
    - Download the generated map using the provided download button.
 
