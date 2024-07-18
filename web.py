@@ -80,10 +80,13 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
         if spotter in spotter_coords:
             coords = spotter_coords[spotter]
             snr = row['snr']
+            time = row['time']
+            if ' ' in time:
+                time = time.split()[1][:5]  # Extract only the HH:MM part if datetime format
             folium.CircleMarker(
                 location=coords,
                 radius=snr / 2,
-                popup=f'Spotter: {spotter}<br>SNR: {snr} dB',
+                popup=f'Spotter: {spotter}<br>SNR: {snr} dB<br>Time: {time}',
                 color=get_color(snr),
                 fill=True,
                 fill_color=get_color(snr)
@@ -222,7 +225,7 @@ def process_pasted_data(pasted_data):
 
 def process_downloaded_data(filename):
     df = pd.read_csv(filename)
-    df = df.rename(columns={'callsign': 'spotter', 'dx': 'dx', 'db': 'snr', 'freq': 'freq', 'band': 'band'})
+    df = df.rename(columns={'callsign': 'spotter', 'dx': 'dx', 'db': 'snr', 'freq': 'freq', 'band': 'band', 'date': 'time'})
     df['snr'] = pd.to_numeric(df['snr'], errors='coerce')
     df['freq'] = pd.to_numeric(df['freq'], errors='coerce')
     return df
@@ -259,6 +262,8 @@ def main():
 
     if 'map_html' not in st.session_state:
         st.session_state.map_html = None
+    if 'filtered_df' not in st.session_state:
+        st.session_state.filtered_df = None
 
     with st.sidebar:
         st.header("Input Data")
@@ -276,6 +281,21 @@ def main():
             date = st.text_input("Enter the date (YYYYMMDD):")
 
         generate_map = st.button("Generate Map")
+
+        band_colors = {
+            '160m': '#FFFF00',  # yellow
+            '80m': '#003300',   # dark green
+            '40m': '#FFA500',   # orange
+            '30m': '#FF4500',   # red
+            '20m': '#0000FF',   # blue
+            '17m': '#800080',   # purple
+            '15m': '#696969',   # dim gray
+            '12m': '#00FFFF',   # cyan
+            '10m': '#FF00FF',   # magenta
+            '6m': '#F5DEB3',    # wheat
+        }
+        band_options = ['All'] + list(band_colors.keys())
+        selected_band = st.selectbox('Select Band', band_options)
 
         with st.expander("Instructions", expanded=False):
             st.markdown("""
@@ -328,6 +348,7 @@ def main():
                     st.error("Please provide the necessary data.")
 
                 filtered_df = df[df['dx'] == callsign].copy()
+                st.session_state.filtered_df = filtered_df.copy()  # Store the filtered dataframe in session state
 
                 spotter_coords_df = pd.read_csv('spotter_coords.csv')
                 spotter_coords = {
@@ -346,6 +367,33 @@ def main():
                 st.session_state.map_html = map_html
                 st.session_state.file_date = file_date
                 st.write("Map generated successfully!")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+    elif st.session_state.filtered_df is not None:
+        try:
+            with st.spinner("Filtering data..."):
+                filtered_df = st.session_state.filtered_df.copy()
+
+                if selected_band != 'All':
+                    filtered_df = filtered_df[filtered_df['band'] == selected_band]
+
+                spotter_coords_df = pd.read_csv('spotter_coords.csv')
+                spotter_coords = {
+                    row['callsign']: (row['latitude'], row['longitude']) for _, row in spotter_coords_df.iterrows()
+                }
+
+                if grid_square:
+                    grid_square_coords = grid_square_to_latlon(grid_square)
+                else:
+                    grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
+
+                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
+
+                m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, True, callsign, stats)
+                map_html = m._repr_html_()
+                st.session_state.map_html = map_html
+                st.write("Data filtered successfully!")
         except Exception as e:
             st.error(f"Error: {e}")
 
