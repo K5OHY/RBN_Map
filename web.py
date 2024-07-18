@@ -75,38 +75,19 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
                 fill_color='black'
             ).add_to(m)
 
-    aggregated_data = filtered_df.groupby('spotter').agg(
-        max_snr=('snr', 'max'),
-        count=('spotter', 'size')
-    ).reset_index()
-
-    for _, row in aggregated_data.iterrows():
+    for _, row in filtered_df.iterrows():
         spotter = row['spotter']
         if spotter in spotter_coords:
             coords = spotter_coords[spotter]
-            max_snr = row['max_snr']
-            count = row['count']
+            snr = row['snr']
             folium.CircleMarker(
                 location=coords,
-                radius=max_snr / 2,
-                popup=f'Spotter: {spotter}<br>Spots: {count}<br>Max SNR: {max_snr} dB',
-                color=get_color(max_snr),
+                radius=snr / 2,
+                popup=f'Spotter: {spotter}<br>SNR: {snr} dB',
+                color=get_color(snr),
                 fill=True,
-                fill_color=get_color(max_snr)
+                fill_color=get_color(snr)
             ).add_to(m)
-
-            for _, spot_row in filtered_df[filtered_df['spotter'] == spotter].iterrows():
-                snr = spot_row['snr']
-                time = spot_row['time']  # Added time
-                time_only = time.split()[1][:5]  # Extract only the HH:MM part
-                folium.CircleMarker(
-                    location=coords,
-                    radius=snr / 2,
-                    popup=f'Spotter: {spotter}<br>SNR: {snr} dB<br>Time: {time_only}',  # Included time in the popup
-                    color=get_color(snr),
-                    fill=True,
-                    fill_color=get_color(snr)
-                ).add_to(m)
 
     folium.Marker(
         location=grid_square_coords,
@@ -241,7 +222,7 @@ def process_pasted_data(pasted_data):
 
 def process_downloaded_data(filename):
     df = pd.read_csv(filename)
-    df = df.rename(columns={'callsign': 'spotter', 'dx': 'dx', 'db': 'snr', 'freq': 'freq', 'band': 'band', 'date': 'time'})
+    df = df.rename(columns={'callsign': 'spotter', 'dx': 'dx', 'db': 'snr', 'freq': 'freq', 'band': 'band'})
     df['snr'] = pd.to_numeric(df['snr'], errors='coerce')
     df['freq'] = pd.to_numeric(df['freq'], errors='coerce')
     return df
@@ -278,8 +259,6 @@ def main():
 
     if 'map_html' not in st.session_state:
         st.session_state.map_html = None
-    if 'filtered_df' not in st.session_state:
-        st.session_state.filtered_df = None
 
     with st.sidebar:
         st.header("Input Data")
@@ -298,21 +277,6 @@ def main():
 
         generate_map = st.button("Generate Map")
 
-        band_colors = {
-            '160m': '#FFFF00',  # yellow
-            '80m': '#003300',   # dark green
-            '40m': '#FFA500',   # orange
-            '30m': '#FF4500',   # red
-            '20m': '#0000FF',   # blue
-            '17m': '#800080',   # purple
-            '15m': '#696969',   # dim gray
-            '12m': '#00FFFF',   # cyan
-            '10m': '#FF00FF',   # magenta
-            '6m': '#F5DEB3',    # wheat
-        }
-        band_options = ['All'] + list(band_colors.keys())
-        selected_band = st.selectbox('Select Band', band_options)
-
         with st.expander("Instructions", expanded=False):
             st.markdown("""
             **Instructions:**
@@ -325,7 +289,7 @@ def main():
             5. You can download the generated map using the provided download button.
             """)
 
-    if generate_map or st.session_state.filtered_df is not None:
+    if generate_map:
         try:
             with st.spinner("Generating map..."):
                 use_band_column = False
@@ -345,12 +309,11 @@ def main():
                     data_source = 'Download RBN data by date'
                     date = ""
 
-                if data_source == 'Paste RBN data' and pasted_data.strip() and st.session_state.filtered_df is None:
+                if data_source == 'Paste RBN data' and pasted_data.strip():
                     df = process_pasted_data(pasted_data)
-                    st.session_state.filtered_df = df[df['dx'] == callsign].copy()
                     st.write("Using pasted data.")
                     file_date = datetime.now(timezone.utc).strftime("%Y%m%d")
-                elif data_source == 'Download RBN data by date' and st.session_state.filtered_df is None:
+                elif data_source == 'Download RBN data by date':
                     if not date.strip():
                         yesterday = datetime.now(timezone.utc) - timedelta(1)
                         date = yesterday.strftime('%Y%m%d')
@@ -360,15 +323,11 @@ def main():
                     os.remove(csv_filename)
                     use_band_column = True
                     file_date = date
-                    st.session_state.filtered_df = df[df['dx'] == callsign].copy()
                     st.write("Using downloaded data.")
-                elif st.session_state.filtered_df is not None:
-                    filtered_df = st.session_state.filtered_df
-
-                if selected_band != 'All':
-                    filtered_df = st.session_state.filtered_df[st.session_state.filtered_df['band'] == selected_band]
                 else:
-                    filtered_df = st.session_state.filtered_df
+                    st.error("Please provide the necessary data.")
+
+                filtered_df = df[df['dx'] == callsign].copy()
 
                 spotter_coords_df = pd.read_csv('spotter_coords.csv')
                 spotter_coords = {
