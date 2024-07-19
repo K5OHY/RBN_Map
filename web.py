@@ -7,7 +7,7 @@ import os
 import re
 from io import BytesIO
 import streamlit as st
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time
 from geopy.distance import geodesic
 
 DEFAULT_GRID_SQUARE = "DM81wx"  # Default grid square location
@@ -81,12 +81,11 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
             coords = spotter_coords[spotter]
             snr = row['snr']
             time = row['time']
-            if ' ' in time:
-                time = time.split()[1][:5]  # Extract only the HH:MM part if datetime format
+            time_str = time.strftime("%H:%M")  # Extract only the HH:MM part
             folium.CircleMarker(
                 location=coords,
                 radius=snr / 2,
-                popup=f'Spotter: {spotter}<br>SNR: {snr} dB<br>Time: {time}',
+                popup=f'Spotter: {spotter}<br>SNR: {snr} dB<br>Time: {time_str}',
                 color=get_color(snr),
                 fill=True,
                 fill_color=get_color(snr)
@@ -210,18 +209,17 @@ def process_pasted_data(pasted_data):
         type_ = parts[6]
         snr = parts[7] + ' ' + parts[8]
         speed = parts[9] + ' ' + parts[10]
-        time = parts[11] + ' ' + parts[12] + ' ' + parts[13]
-        seen = ' '.join(parts[14:]) if len(parts) > 14 else ''
+        time_str = parts[11] + ' ' + parts[12] + ' ' + parts[13]
+        
+        try:
+            time = datetime.strptime(time_str, "%H%Mz %d %b")
+        except ValueError:
+            time = None
         
         if all([spotter, dx, distance, freq, mode, type_, snr, speed, time]):
-            # Correcting time format
-            try:
-                time = datetime.strptime(time, "%H%Mz %d %b").strftime("%H:%M")
-            except ValueError:
-                time = "Invalid Time"
-            data.append([spotter, dx, distance, freq, mode, type_, snr, speed, time, seen])
+            data.append([spotter, dx, distance, freq, mode, type_, snr, speed, time])
     
-    df = pd.DataFrame(data, columns=['spotter', 'dx', 'distance', 'freq', 'mode', 'type', 'snr', 'speed', 'time', 'seen'])
+    df = pd.DataFrame(data, columns=['spotter', 'dx', 'distance', 'freq', 'mode', 'type', 'snr', 'speed', 'time'])
     
     df['snr'] = df['snr'].str.split().str[0].astype(float)
     df['freq'] = df['freq'].astype(float)
@@ -236,6 +234,7 @@ def process_downloaded_data(filename):
     df = df.rename(columns={'callsign': 'spotter', 'dx': 'dx', 'db': 'snr', 'freq': 'freq', 'band': 'band', 'date': 'time'})
     df['snr'] = pd.to_numeric(df['snr'], errors='coerce')
     df['freq'] = pd.to_numeric(df['freq'], errors='coerce')
+    df['time'] = pd.to_datetime(df['time'])
     return df
 
 def calculate_statistics(filtered_df, grid_square_coords, spotter_coords):
@@ -305,6 +304,14 @@ def main():
         band_options = ['All'] + list(band_colors.keys())
         selected_band = st.selectbox('Select Band', band_options)
 
+        # Adding the time slider
+        st.subheader("Filter by UTC Time")
+        start_time, end_time = st.slider(
+            "Select time range",
+            value=(time(0, 0), time(23, 59)),
+            format="HH:mm"
+        )
+
         with st.expander("Instructions", expanded=False):
             st.markdown("""
             **Instructions:**
@@ -358,6 +365,9 @@ def main():
                 filtered_df = df[df['dx'] == callsign].copy()
                 st.session_state.filtered_df = filtered_df.copy()  # Store the filtered dataframe in session state
 
+                # Filter by the selected time range
+                filtered_df = filtered_df[(filtered_df['time'].dt.time >= start_time) & (filtered_df['time'].dt.time <= end_time)]
+
                 spotter_coords_df = pd.read_csv('spotter_coords.csv')
                 spotter_coords = {
                     row['callsign']: (row['latitude'], row['longitude']) for _, row in spotter_coords_df.iterrows()
@@ -388,6 +398,9 @@ def main():
 
                 if selected_band != 'All':
                     filtered_df = filtered_df[filtered_df['band'] == selected_band]
+
+                # Filter by the selected time range
+                filtered_df = filtered_df[(filtered_df['time'].dt.time >= start_time) & (filtered_df['time'].dt.time <= end_time)]
 
                 spotter_coords_df = pd.read_csv('spotter_coords.csv')
                 spotter_coords = {
