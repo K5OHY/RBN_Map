@@ -368,6 +368,9 @@ def main():
                 else:
                     grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
 
+                if selected_band != 'All':
+                    filtered_df = filtered_df[filtered_df['band'] == selected_band]
+
                 stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
 
                 m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column, callsign, stats)
