@@ -1,0 +1,353 @@
+N9RU		EM57NS	K	NA	8	4	112 days ago	online
+K2PO/7	15m,20m,40m	CN85LI	K	NA	6	3	11 years ago	online
+UY2RA	80m	KO51IM	UR	EU	29	16	7 years ago	online
+OE6ADD	40m,80m	JN77PA	OE	EU	28	15	6 years ago	online
+K3LR	20m,40m	EN91SE	K	NA	8	5	15 years ago	online
+WB6BEE	15m	FM17DT	K	NA	8	5	10 years ago	online
+W6YX	10m,12m,15m,17m,20m,30m,40m	CM87VJ	K	NA	6	3	5 years ago	online
+VE3EID	15m,20m	FN05GK	VE	NA	4	4	9 years ago	online
+AK6RI-1	20m,30m,40m	CM87XI	K	NA	6	3	27 days ago	online
+ON6ZQ	40m,80m	JO20EQ	ON	EU	27	14	13 years ago	online
+ND7K	10m,15m,20m,30m,40m	DM34OB	K	NA	6	3	3 years ago	online
+CT1EYQ	20m,30m,40m,80m	IM58OB	CT	EU	37	14	2 years ago	online
+ZL3X		RE66IR	ZL	OC	60	32	5 years ago	online
+GI4DOH	40m,80m	IO74DP	GI	EU	27	14	14 years ago	online
+BI4MPH	20m,40m	PM07QM	BY	AS	44	24	3 years ago	online
+VE6WZ-2		DO21ST	VE	NA	2	4	5 years ago	online
+EA5WU	20m,30m,40m,80m	IM99WU	EA	EU	37	14	12 years ago	online
+F4VVG	40m	JN48BX	F	EU	27	14	3 years ago	online
+W8WTS	10m,15m,20m,40m	EN91JJ	K	NA	8	4	15 years ago	online
+YO2CK	40m,80m	KN15LO	YO	EU	28	20	1 year ago	online
+VK6ANC	40m	OF78WE	VK	OC	58	29	5 years ago	online
+N7TUG	15m,20m,30m	CN87TQ	K	NA	6	3	9 years ago	online
+K7EK	20m,30m,40m	EM77AT	K	NA	8	4	17 years ago	online
+S53A	160m,20m,30m,40m,80m	JN75FT	S5	EU	28	15	4 years ago	online
+ZL4YL	10m,15m,20m	RF80LF	ZL	OC	60	32	8 years ago	online
+HB9DCO	160m,40m,80m	JN37SM	HB	EU	28	14	13 years ago	online
+HA5E	160m,40m,80m	JN86QQ	HA	EU	28	15	67 days ago	online
+ET3AA		KJ99JA	ET	AF	48	37	10 years ago	online
+M1GEO	160m,40m,80m	JO02EH	G	EU	27	14	109 days ago	online
+JA1JRS		PM95VS	JA	AS	45	25	10 years ago	online
+NH6HI	10m	BL01fw	KH6	OC	61	31	9 years ago	online
+MM0ZBH	160m,20m,40m,80m	IO86IB	GM	EU	27	14	4 years ago	online
+VE6WZ		DO21ST	VE	NA	2	4	15 years ago	online
+ZS1NN		JF96KO	ZS	AF	57	38	2 years ago	online
+PY2KNK	10m,15m,20m,40m	GG56NH	PY	SA	15	11	320 days ago	online
+JI1HFJ		PM95SS	JA	AS	45	25	7 years ago	online
+OH6BG	20m	KP03QA	OH	EU	18	15	14 years ago	online
+OH4KA	40m	KP20NK	OH	EU	18	15	6 years ago	online
+OG66X		KP24HP	OH	EU	18	15	5 years ago	online
+K9IMM	12m,15m,20m,30m	EN52CV	K	NA	8	4	11 years ago	online
+K6FOD	10m,15m,17m,20m,30m	DM04WC	K	NA	6	3	4 years ago	online
+DF7GB	160m,40m,80m	JN49CX	DL	EU	28	14	13 years ago	online
+DK2GOX	4m	JN49WS	DL	EU	28	14	5 years ago	online
+OK1HRA	160m,40m,80m	JO60WA	OK	EU	28	15	4 years ago	online
+LZ5DI	40m,80m	KN12PQ	LZ	EU	28	20	3 years ago	online
+K7RUT	10m,12m,15m,20m,30m	CN87PE	K	NA	6	3	9 years ago	online
+K9QC	15m,20m	EN44IU	K	NA	8	4	15 years ago	online
+VU2CPL	40m,80m	MK83TE	VU	AS	41	22	8 years ago	online
+DR4W	160m,20m,40m,80m	JN59SV	DL	EU	28	14	8 years ago	online
+N6TV	10m,12m,15m,17m,20m,30m,40m	CM97CF	K	NA	6	3	14 years ago	online
+JJ2VLY	20m	PM95JG	JA	AS	45	25	10 years ago	online
+VR2FUN-77	40m	OL62LL	VR	AS	44	24	2 years ago	online
+RK3TD	40m,80m	LO16QW	UA	EU	29	16	16 years ago	online
+BH4RRG	80m	OM92IC	BY	AS	44	24	12 years ago	online
+KC4YVA	15m,20m,40m	FM17IL	K	NA	8	5	8 years ago	online
+V51YJ	40m	JG87NJ	V5	AF	57	38	14 years ago	online
+OH0K/6		KP03SF	OH	EU	18	15	4 years ago	online
+PI4CC	20m,40m,80m	JO21BX	PA	EU	27	14	2 years ago	online
+HA1VHF	160m,2m,40m,80m	JN87GF	HA	EU	28	15	14 years ago	online
+WZ7I	10m,12m,15m,17m,20m,30m,40m	FN20KK	K	NA	8	5	16 years ago	online
+HB9BXE	160m,20m,40m,80m	JN47EB	HB	EU	28	14	11 years ago	online
+IK3STG	160m,80m	JN55XK	I	EU	28	15	14 years ago	online
+KW7MM-2	15m,20m,30m,40m	DM42LL	K	NA	6	3	251 days ago	online
+S50U	40m,80m	JN66XD	S5	EU	28	15	8 years ago	online
+KM3T-5	20m,30m,40m,80m	FN42ET	K	NA	8	5	1 year ago	online
+OZ1BZS	80m	JO46LE	OZ	EU	18	14	2 years ago	online
+BG4GOV	40m	PM00VW	BY	AS	44	24	8 years ago	online
+DL8LAS-3	160m,20m	JO54EF	DL	EU	28	14	33 days ago	online
+KW7MM	10m,15m,17m,20m,30m,40m	DM42MM	K	NA	6	3	7 years ago	online
+SM7IUN	40m,80m	JO65MR	SM	EU	18	14	8 years ago	online
+W4KAZ	15m,20m,40m	FM05OS	K	NA	8	5	13 years ago	online
+3D2AG	10m,15m	RH91FV	3D2	OC	56	32	5 years ago	online
+E28AC	40m,80m	OK01CT	HS	AS	49	26	9 years ago	online
+GX0FRE	40m,80m	IO82UC	G	EU	27	14	1 year ago	online
+EA2RCF-4	30m,40m,80m	IN82PU	EA	EU	37	14	3 years ago	online
+LZ7AA	40m,80m	KN12qq	LZ	EU	28	20	9 years ago	online
+KM3T-1		FN42ET	K	NA	8	5	8 years ago	online
+DF2CK	2m	JO71AD	DL	EU	28	14	16 years ago	online
+EA2CW	40m,80m	IN83MG	EA	EU	37	14	12 years ago	online
+K3GMQ	10m,12m,15m,17m,20m,30m,40m	FN20LH	K	NA	8	5	42 days ago	online
+IQ9RG	20m,40m,80m	JM76GV	IT9	EU	28	15	291 days ago	online
+VU2OY	12m,30m,40m,80m	MJ88KN	VU	AS	41	22	178 days ago	online
+CX6VM	10m,15m,17m,20m	GF27XU	CX	SA	14	13	14 years ago	online
+DL1HWS-3		JO61AQ	DL	EU	28	14	1 year ago	online
+DL1HWS-4	160m	JO61aq	DL	EU	28	14	1 year ago	online
+OE3KLU		JN88FD	OE	EU	28	15	346 days ago	online
+W3UA	10m,12m,15m,20m,30m,40m	FN42GV	K	NA	8	5	15 years ago	online
+HG8A	40m,80m	JN96RK	HA	EU	28	15	4 years ago	online
+PD2RPS	160m,40m,80m	JO22VW	PA	EU	27	14	3 years ago	online
+DK0KK	160m,40m,80m	JO30FK	DL	EU	28	14	8 years ago	online
+F4GOU	20m,40m,80m	JN05BX	F	EU	27	14	11 years ago	online
+AA0O	10m,12m,15m,20m,30m	EL87PS	K	NA	8	5	2 years ago	online
+BD4UNT		OM92JB	BY	AS	44	24	3 years ago	online
+LZ3CB	40m,80m	KN32SN	LZ	EU	28	20	5 years ago	online
+PA5KT-4	40m,80m	JO11WL	PA	EU	27	14	187 days ago	online
+IT9GSF	15m,20m,40m,80m	JM67SS	IT9	EU	28	15	15 years ago	online
+JH7CSU1	40m,80m	PM95TP	JA	AS	45	25	6 years ago	online
+G4IRN	160m,17m,20m,40m,80m	IO82MO	G	EU	27	14	12 years ago	online
+DK8NE		JO50AL	DL	EU	28	14	15 years ago	online
+7L4IOU		PM95WR	JA	AS	45	25	9 years ago	online
+DC8YZ	40m,80m	JN59MF	DL	EU	28	14	3 years ago	online
+KP3CW	15m,20m	FK68XI	KP4	NA	11	8	2 years ago	online
+IW9GDC	40m,80m	JM78SD	IT9	EU	28	15	286 days ago	online
+LB9KJ	80m	JO29QJ	LA	EU	18	14	2 years ago	online
+DF1VB	40m,80m	JO31SK	DL	EU	28	14	17 years ago	online
+ES5PC	160m,40m,80m	KO38HJ	ES	EU	29	15	16 years ago	online
+HA8TKS	40m,80m	JN96UV	HA	EU	28	15	12 years ago	online
+K1RA	10m,12m,15m,17m,20m,30m,40m	FM18CR	K	NA	8	5	15 years ago	online
+OH8KA	80m	KP25QC	OH	EU	18	15	4 years ago	online
+DL8LAS	160m,20m,40m,80m	JO54EF	DL	EU	28	14	14 years ago	online
+VK2GEL		QF55HJ	VK	OC	59	30	8 years ago	online
+SQ5J	40m,80m	KO02KF	SP	EU	28	15	2 years ago	online
+OZ1AAB	160m,40m,80m	JO65CS	OZ	EU	18	14	2 years ago	online
+JN1ILK	15m,160m,20m,40m	PM95ET	JA	AS	45	25	3 years ago	online
+LZ4UX	40m,80m	KN23TB	LZ	EU	28	20	11 years ago	online
+W2NNN	10m,12m,15m,20m,30m,40m	FN20RQ	K	NA	8	5	13 years ago	online
+KW7MM-3	10m,12m,15m	DM42MM	K	NA	6	3	94 days ago	online
+DK9DA		JO33mj	DL	EU	28	14	79 days ago	online
+RK3TD-2	40m,80m	LO26CI	UA	EU	29	16	2 years ago	online
+HB9GVO	40m,80m	JN46LI	HB	EU	28	14	4 years ago	online
+K3PA-1	10m,12m,15m,17m,20m,30m,40m	EM29MD	K	NA	7	4	8 years ago	online
+W8WWV	10m,15m,17m,20m,40m	EN91HM	K	NA	8	4	13 years ago	online
+KE6X		CM87WU	K	NA	6	3	38 days ago	online
+BA6KC	40m	OM65XH	BY	AS	44	24	3 years ago	online
+VE7CC	10m,12m,15m,20m	CN89RE	VE	NA	2	3	12 years ago	online
+KM3T-3	10m,12m,15m,17m,20m,30m,40m	FN42ET	K	NA	8	5	3 years ago	online
+N9CO	15m,20m,40m	EN52QA	K	NA	8	4	2 years ago	online
+HA6PX	160m,40m,80m	JN98WD	HA	EU	28	15	14 years ago	online
+PY2PE		GG66PO	PY	SA	15	11	323 days ago	online
+ZF9CW	10m,12m,15m,17m,20m,30m,40m	FK09CR	ZF	NA	11	8	6 years ago	online
+DK8NE/0	6m	JO50AL	DL	EU	28	14	1 year ago	online
+N6RUN		CM97CP	K	NA	6	3	8 days ago	online
+PA0MBO	40m,80m	JO32KE	PA	EU	27	14	14 years ago	online
+BH4XDZ	40m	OM94NO	BY	AS	44	24	5 years ago	online
+DP5G	160m,40m,80m	JO30fk	DL	EU	28	14	8 years ago	online
+3B8GL		LG89RR	3B8	AF	53	39	1 year ago	online
+F6KGL	40m	JN18GU	F	EU	27	14	2 years ago	online
+IK7YTT	40m,80m	JN81DC	I	EU	28	15	5 years ago	online
+VE6WZ-1		DO21ST	VE	NA	2	4	3 years ago	online
+OK1FCJ	160m,40m,80m	JO70GA	OK	EU	28	15	16 years ago	online
+PE5TT	160m,20m,40m,80m	JO21TV	PA	EU	27	14	5 years ago	online
+DL1HWS	160m,40m,80m	JO61AQ	DL	EU	28	14	4 years ago	online
+W2NAF		FN21EI	K	NA	8	5	9 years ago	online
+SV1CDN		KM17TX	SV	EU	28	20	11 years ago	online
+KD2OGR	12m,15m,17m,20m,40m	FN20SL	K	NA	8	5	5 years ago	online
+LU8XW	15m,17m,20m,40m	FD55UE	LU	SA	16	13	2 years ago	online
+K9LC	10m,12m,15m,17m,20m,30m,40m	EN52MG	K	NA	8	4	6 years ago	online
+KV4TT	10m,12m,15m,20m,30m,40m	FM03PT	K	NA	8	5	8 years ago	online
+N8DXE	40m,80m	EN91EF	K	NA	8	4	4 years ago	online
+KM3T-2	15m,20m,40m	FN42et	K	NA	8	5	8 years ago	online
+DM5GG	12m,40m,80m	JO61UE	DL	EU	28	14	4 years ago	online
+AC0C-1	10m,15m,17m,20m,30m,40m	EM28QP	K	NA	7	4	5 years ago	online
+N2CR	10m,15m,20m,30m,40m	FN20SU	K	NA	8	5	1 year ago	online
+WX7V/5	17m	EM12ou	K	NA	7	4	1 year ago	online
+BG0AJO/0		NN33SU	BY	AS	42	23	1 year ago	online
+M9SJM	40m,80m	IO92UQ	G	EU	27	14	28 days ago	online
+G4ZFE	160m,40m,6m,80m	IO91PK	G	EU	27	14	9 years ago	online
+SP5GQ	40m,80m	KO02LK	SP	EU	28	15	209 days ago	online
+DE2SAX	80m	JN48XK	DL	EU	28	14	5 years ago	online
+SP8R		KO10AA	SP	EU	28	15	4 years ago	online
+N2YCH	10m,12m,15m,17m,20m,30m,40m,6m	FN31JG	K	NA	8	5	255 days ago	online
+LA6TPA	80m	JP54RL	LA	EU	18	14	11 years ago	online
+BG2TFW	40m,80m	PN11SW	BY	AS	44	24	2 years ago	online
+WC2L	10m,12m,15m,17m,20m,30m,40m	FN32BS	K	NA	8	5	6 years ago	online
+WW1L		FN54OM	K	NA	8	5	6 years ago	online
+K5EM	10m,12m,15m,20m,30m,40m	CN87UQ	K	NA	6	3	2 years ago	online
+GM0UDL	160m,17m,20m,30m,40m,80m	IO77vo	GM	EU	27	14	66 days ago	online
+EA1URA	40m,80m	IN73CI	EA	EU	37	14	5 years ago	online
+BA4OP	40m	OM96NX	BY	AS	44	24	287 days ago	online
+HA8TKS-2		JN96UV	HA	EU	28	15	213 days ago	online
+VU2TUM	40m,80m	ML88LJ	VU	AS	41	22	1 year ago	online
+VK2RH		QF56OC	VK	OC	59	30	2 years ago	online
+DL8TG	160m,40m,80m	JO52IJ	DL	EU	28	14	8 years ago	online
+IK4VET	20m,40m,80m	JN54MM	I	EU	28	15	7 years ago	online
+DE1LON	40m,80m	JO31HG	DL	EU	28	14	12 years ago	online
+S53WW	40m,80m	JN76HE	S5	EU	28	15	4 years ago	online
+F1EYG	20m,40m,80m	JN18AR	F	EU	27	14	3 years ago	online
+K5TR	10m,12m,15m,17m,20m,30m,40m	EM00UF	K	NA	7	4	8 years ago	online
+DL8LAS-1	160m,40m,80m	JO54EF	DL	EU	28	14	6 years ago	online
+UA4M	40m,80m	LO44WI	UA	EU	29	16	11 years ago	online
+WC8GOP		EN72PS	K	NA	8	4	1 year ago	online
+DK9IP-1	160m,20m,40m,80m	JN48FX	DL	EU	28	14	16 years ago	online
+DK9IP	20m,40m	JN48FX	DL	EU	28	14	17 years ago	online
+VK3RASA	30m,40m	QF21WV	VK	OC	59	30	5 years ago	online
+DK0TE	40m,80m	JN47RP	DL	EU	28	14	13 years ago	online
+RU9CZD	40m,80m	MO07OD	UA9	AS	30	17	14 years ago	online
+K7CO	20m,30m,40m	DN40BN	K	NA	6	3	1 year ago	online
+ES2RR	160m,40m,80m	KO29HG	ES	EU	29	15	4 years ago	online
+YO2KAR	40m,80m	KN15KV	YO	EU	28	20	175 days ago	online
+KH6LC	10m,15m	BK29CW	KH6	OC	61	31	14 years ago	online
+S58W	160m,17m,20m,40m,80m	JN65UM	S5	EU	28	15	66 days ago	online
+W1NT-6	10m,12m,15m,20m,30m,40m,80m	FN42LU	K	NA	8	5	6 years ago	online
+JO1YYP		PM95VW	JA	AS	45	25	10 years ago	online
+W1NT-2	10m,15m,20m,40m	FN42LU	K	NA	8	5	12 years ago	online
+DG6FL	30m,40m,80m	JO40da	DL	EU	28	14	9 years ago	online
+NU4F	10m,12m,15m,17m,20m,30m,40m	EL96WD	K	NA	8	5	1 year ago	online
+NN3RP	10m,15m,20m,30m	FM18LW	K	NA	8	5	15 years ago	online
+DL9GTB	160m,20m,40m,80m	JO63LX	DL	EU	28	14	14 years ago	online
+W3OA	10m,12m,15m,17m,20m,30m,40m	EM95MN	K	NA	8	5	17 years ago	online
+TI7W	10m,12m,15m,17m,20m,30m	EK70LR	TI	NA	11	7	4 years ago	online
+5Z4GO		KI96UA	5Z	AF	48	37	1 year ago	online
+TF3Y	20m,40m,80m	HP94BD	TF	EU	17	40	15 years ago	online
+DK3WW	160m,40m,80m	JO62MG	DL	EU	28	14	8 years ago	online
+F6IIT		JN06FQ	F	EU	27	14	13 years ago	online
+KO4BHX	10m,12m,15m,17m,20m,30m,40m	FM06MF	K	NA	8	5	30 days ago	online
+VE6JY	10m,15m,20m,40m	DO33OR	VE	NA	2	4	9 years ago	online
+WE9V	10m,12m,15m,17m,20m,30m,40m	EN52XN	K	NA	8	4	17 years ago	online
+W3DAN	40m,80m	EN91EF	K	NA	8	5	4 years ago	online
+WT9U	10m,12m,15m,17m,20m,30m,40m	EN71AO	K	NA	8	4	1 year ago	online
+WV4P	15m,20m,40m	EM55VD	K	NA	8	4	2 years ago	online
+VE4DRK	10m,12m,15m,20m	EN19LU	VE	NA	3	4	5 days ago	online
+VE6AO	10m,12m,15m,20m	DO31AC	VE	NA	2	4	13 years ago	online
+EY8ZE	40m,80m	MM48JN	EY	AS	30	17	4 years ago	online
+W6DVN		DM04TA	K	NA	6	3	65 days ago	online
+YO5LD	40m,80m	KN05NR	YO	EU	28	20	13 years ago	online
+S50ARX		JN65TW	S5	EU	28	15	15 years ago	online
+KB5NJD		EM12MP	K	NA	7	4	8 years ago	online
+K3PA-2	10m	EM29MD	K	NA	7	4	2 years ago	online
+DL0LA	160m,40m,80m	JN68CM	DL	EU	28	14	4 years ago	online
+SM1HEV	40m,80m	JO97BM	SM	EU	18	14	1 year ago	online
+K4PP	10m,12m,15m,17m,20m,30m,40m	EM64PT	K	NA	8	4	4 years ago	online
+PA8MM	40m,80m	JO22LL	PA	EU	27	14	6 years ago	online
+DM7EE	160m,40m,80m	JO52JJ	DL	EU	28	14	5 years ago	online
+OE9GHV	160m,20m,30m,40m,80m	JN47WK	OE	EU	28	15	6 years ago	online
+RN4WA	40m,80m	LO66PU	UA	EU	30	16	16 years ago	online
+KE3BK		CM97fs	K	NA	6	3	7 years ago	online
+DO4DXA		JN58QC	DL	EU	28	14	14 years ago	online
+G0KTN	20m,40m	IO81TI	G	EU	27	14	16 years ago	online
+KL2R		BP64KU	KL	NA	1	1	12 years ago	online
+W3RGA	10m,12m,15m,17m,20m,30m,40m	FN10PV	K	NA	8	5	7 years ago	online
+MM9PSY	160m,40m,80m	IO86HA	GM	EU	27	14	28 days ago	online
+RL3A		KO75KR	UA	EU	29	16	15 years ago	online
+OZ4ADX	80m	JO75IC	OZ	EU	18	14	3 years ago	online
+F4BPO	20m,40m,80m	JN36DG	F	EU	27	14	324 days ago	17 minutes ago
+IK6HIR		JN63KW	I	EU	28	15	3 years ago	59 minutes ago
+UT5R	40m,80m	KO51IM	UR	EU	29	16	5 years ago	1 hour, 15 minutes ago
+S57AL		JN76HE	S5	EU	28	15	15 years ago	2 hours, 5 minutes ago
+DJ0OP		JO53IV	DL	EU	28	14	157 days ago	3 hours, 47 minutes ago
+JE1AEX-2		PM95LL	JA	AS	45	25	1 year ago	4 hours, 20 minutes ago
+W3LPL		FM19LG	K	NA	8	5	15 years ago	4 hours, 31 minutes ago
+KD7EFG	10m,12m,15m,17m,20m,30m,40m	DN31UO	K	NA	6	3	324 days ago	5 hours, 11 minutes ago
+JE1AEX-1		PM95LL	JA	AS	45	25	1 year ago	6 hours, 9 minutes ago
+WS2C	10m,12m,15m,17m,20m,30m,40m	FM29KR	K	NA	8	5	1 year ago	6 hours, 12 minutes ago
+BH4HKZ	40m	PM01SD	BY	AS	44	24	263 days ago	6 hours, 52 minutes ago
+PA3GRM		JO22QE	PA	EU	27	14	8 years ago	11 hours, 10 minutes ago
+NA3M 2		FM19JE	K	NA	8	5	1 year ago	12 hours, 58 minutes ago
+SZ1A	20m,40m,80m	KM08QR	SV	EU	28	20	8 years ago	15 hours, 49 minutes ago
+EA1DAV	15m	IN53UG	EA	EU	37	14	5 years ago	21 hours, 5 minutes ago
+WS3W	20m,40m	FM19NG	K	NA	8	5	5 years ago	23 hours, 1 minute ago
+LU6KK	10m	FG75GF	LU	SA	14	13	1 year ago	1 day 7 minutes ago
+DL5RCN	20m,30m,40m,80m	JN68RS	DL	EU	28	14	2 years ago	1 day, 2 hours ago
+N7OR	15m,20m	CN85UJ	K	NA	6	3	11 years ago	1 day, 4 hours ago
+TA9J		LN10mn	TA	AS	39	20	60 days ago	1 day, 4 hours ago
+W5ZN		EM45DH	K	NA	7	4	71 days ago	1 day, 4 hours ago
+M9PSY		IO86ha	G	EU	27	14	94 days ago	1 day, 5 hours ago
+MM3NDH		IO86ha	GM	EU	27	14	3 years ago	1 day, 5 hours ago
+IZ8EYP	10m,15m,17m,20m,30m,40m	JM88FJ	I	EU	28	15	8 years ago	1 day, 7 hours ago
+DM6CS		JN58QF	DL	EU	28	14	9 years ago	1 day, 8 hours ago
+BD7JNA	20m,40m	OL63QD	BY	AS	44	24	8 years ago	1 day, 8 hours ago
+VK3VB	30m	QF21PW	VK	OC	59	30	5 years ago	1 day, 8 hours ago
+CW0TEST		KA12aa	CX	SA	14	13	1 day, 12 hours ago	1 day, 12 hours ago
+HG0Y	20m	JN97WW	HA	EU	28	15	6 years ago	1 day, 15 hours ago
+G1VWC		IO92WH	G	EU	27	14	3 years ago	1 day, 16 hours ago
+W2MV		FN31BA	K	NA	8	5	6 years ago	1 day, 18 hours ago
+F5AHD	20m,40m,80m	JN37RO	F	EU	27	14	14 years ago	1 day, 22 hours ago
+DF2JP	160m,40m,80m	JO31ET	DL	EU	28	14	10 years ago	1 day, 22 hours ago
+MM0GPZ		IO75WS	GM	EU	27	14	321 days ago	1 day, 23 hours ago
+DL5RMH	20m,40m,80m	JN68BN	DL	EU	28	14	6 years ago	2 days ago
+JG1DLY	20m	QM05DN	JA	AS	45	25	10 years ago	2 days ago
+F8DGY		JN18GM	F	EU	27	14	11 years ago	2 days ago
+DR5M	15m,20m,40m,80m	JN59MO	DL	EU	28	14	1 year ago	2 days ago
+DL6NDW		JN58SC	DL	EU	28	14	70 days ago	2 days ago
+G0TMX	10m,15m,17m,20m,30m,40m	JO02IF	G	EU	27	14	11 years ago	2 days ago
+SE5E	10m,15m,20m,30m,40m,80m	JO89LW	SM	EU	18	14	10 years ago	2 days ago
+PR1T	10m,15m,20m	GG87JR	PY	SA	15	11	15 years ago	2 days ago
+G4ZFE-1	12m,15m,17m,20m,30m	IO91PK	G	EU	27	14	2 years ago	2 days ago
+F5VLY	30m	JN04HF	F	EU	27	14	14 years ago	2 days ago
+LY2XW	20m	KO25OE	LY	EU	29	15	14 years ago	2 days ago
+HA5PP	80m	JN86QQ	HA	EU	28	15	12 years ago	2 days ago
+LZ4AE	10m,160m,17m,20m,30m,40m,80m	KN13US	LZ	EU	28	20	7 years ago	2 days ago
+BD8CS	10m	OM30BP	BY	AS	43	24	4 years ago	2 days ago
+NX5M	160m	EM10QJ	K	NA	7	4	11 years ago	2 days ago
+S54L	20m,40m,60m,80m	JN75FV	S5	EU	28	15	2 years ago	3 days ago
+S53F	10m,15m,20m,30m	JN75ON	S5	EU	28	15	10 years ago	3 days ago
+OG73X	10m,15m,20m	KP24JO	OH	EU	18	15	6 years ago	3 days ago
+OK2ZAW		JN79XN	OK	EU	28	15	16 years ago	3 days ago
+OK2ZAW/2		JN79XN	OK	EU	28	15	17 days ago	3 days ago
+SM0HRP/A	40m,80m	JO89XK	SM	EU	18	14	1 year ago	4 days ago
+ZF1A		EK99IG	ZF	NA	11	8	4 years ago	4 days ago
+S57C	40m	JN75QW	S5	EU	28	15	90 days ago	4 days ago
+WA7LNW	40m,80m	DM37GD	K	NA	6	3	15 years ago	4 days ago
+DL1AMQ		JO50UU	DL	EU	28	14	17 years ago	5 days ago
+DM6EE	15m,160m,17m,20m,30m,40m,80m	JO52KJ	DL	EU	28	14	5 years ago	5 days ago
+HB9AFZ	15m,20m	JN46ME	HB	EU	28	14	113 days ago	5 days ago
+BI1XJT		ON80OG	BY	AS	44	24	31 days ago	5 days ago
+N2QT	40m	FM18OW	K	NA	8	5	15 years ago	7 days ago
+G3BJ		IO82NL	G	EU	27	14	12 years ago	8 days ago
+NG7M	10m,12m,15m,17m,20m,40m	DN31xb	K	NA	6	3	8 years ago	8 days ago
+R4NCU		LO48VI	UA	EU	29	16	1 year ago	8 days ago
+JH4UTP		PM64XP	JA	AS	45	25	8 years ago	8 days ago
+HL1VAU 0	15m	PM37nl	HL	AS	44	25	9 days ago	8 days ago
+3V/KF5EYY		JM54IQ	3V	AF	37	33	11 years ago	9 days ago
+TK0C-7		JN42JO	TK	EU	28	15	89 days ago	9 days ago
+NA3M		FM19JE	K	NA	8	5	13 years ago	10 days ago
+JA7KBR		PM95wr	JA	AS	45	25	9 years ago	10 days ago
+OE6ADD/1	30m,40m,80m	JN77PA	OE	EU	28	15	10 days ago	10 days ago
+OE6ADD-1		JN77PA	OE	EU	28	15	6 years ago	10 days ago
+G3AKX		IO91ON	G	EU	27	14	127 days ago	10 days ago
+EA/VE3NZ	20m,40m,80m	IM76LM	EA	EU	37	14	4 years ago	11 days ago
+EA4FIT		IN80di	EA	EU	37	14	12 years ago	11 days ago
+JK1QLQ	40m,80m	PM96MJ	JA	AS	45	25	1 year ago	11 days ago
+W8NJH		EN81EQ	K	NA	8	4	157 days ago	12 days ago
+G4YBU	160m,40m,80m	IO91UI	G	EU	27	14	5 years ago	12 days ago
+VE6WZ-3	10m,15m,20m	DO21ST	VE	NA	2	4	1 year ago	13 days ago
+RZ9UN	15m,20m,30m,40m	NO35FL	UA9	AS	31	18	12 years ago	13 days ago
+BD7LAE		OL62LL	BY	AS	44	24	4 years ago	13 days ago
+LY3G	10m,15m	KO05NS	LY	EU	29	15	8 years ago	15 days ago
+PA2SQ		JO22TR	PA	EU	27	14	4 years ago	15 days ago
+S59DBC		JN86CQ	S5	EU	28	15	6 years ago	16 days ago
+DL5RDO		JN59KK	DL	EU	28	14	9 years ago	16 days ago
+R4AC		LN28GS	UA	EU	29	16	17 days ago	16 days ago
+DL1EFW	10m,15m,20m,40m	JO31FD	DL	EU	28	14	13 years ago	16 days ago
+PC5Q	10m,15m,20m,40m,80m	JO22UB	PA	EU	27	14	8 years ago	16 days ago
+F4EGZ/P	10m,15m,20m,40m,80m	JN16JL	F	EU	27	14	5 years ago	16 days ago
+EU8RO	10m,12m,15m	KO52MK	EU	EU	29	16	185 days ago	17 days ago
+OH2BBT		KP20HF	OH	EU	18	15	12 years ago	18 days ago
+PE1ITR		JO21QK	PA	EU	27	14	14 years ago	18 days ago
+NU4F-2		EL96WG	K	NA	8	5	192 days ago	19 days ago
+M9SJM/1	10m,15m,20m	IO92UQ	G	EU	27	14	22 days ago	21 days ago
+8Q7NI		MJ63KN	8Q	AS	41	22	1 year ago	21 days ago
+W3OA-1	10m,12m,20m,30m,40m	EM95MN	K	NA	8	5	12 years ago	21 days ago
+ON7IO		JO20GP	ON	EU	27	14	24 days ago	22 days ago
+G4AON	10m,12m,15m,17m,20m,30m,40m	IO93PS	G	EU	27	14	7 years ago	23 days ago
+N4LR		EM50RT	K	NA	8	4	16 years ago	23 days ago
+HA8TA-2		JN87IH	HA	EU	28	15	26 days ago	26 days ago
+F5MMX	10m,15m,160m,20m,30m,40m,80m	IN95OC	F	EU	27	14	37 days ago	26 days ago
+RU4FM	30m,40m,80m	LO13VL	UA	EU	29	16	67 days ago	27 days ago
+G4YBU/1	17m,20m,30m,40m,80m	IO91UI	G	EU	27	14	28 days ago	28 days ago
+EL2BG		IJ46PI	EL	AF	46	35	7 years ago	29 days ago
+IZ7XIB	20m	JN80FT	I	EU	28	15	4 years ago	30 days ago
+PA3DSB	160m	JO21OI	PA	EU	27	14	31 days ago	30 days ago
+KM4SII	160m	EM72GO	K	NA	8	5	5 years ago	31 days ago
+W2AXR	80m	FN03NG	K	NA	8	5	11 years ago	31 days ago
+GM4OAS		IO76CX	GM	EU	27	14	9 years ago	32 days ago
+DL8LAS-2		JO54EF	DL	EU	28	14	6 years ago	33 days ago
+DR5X	17m,20m,30m,40m	JO54EF	DL	EU	28	14	7 years ago	33 days ago
+M7KPO		IO91RV	G	EU	27	14	1 year ago	34 days ago
+HB9TSU	20m	JN46KE	HB	EU	28	14	106 days ago	36 days ago
+UR0VS		KN68CM	UR	EU	29	16	36 days ago	36 days ago
+R3VL		KO96IJ	UA	EU	29	16	12 years ago	37 days ago
+ 
+ 
+
