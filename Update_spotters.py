@@ -1,88 +1,105 @@
 #!/usr/bin/env python3
 import csv
-import re
-from collections import OrderedDict
 
-# Paste your RBN table here (exactly as copied)
-RBN_DATA = r"""
-callsign	band	grid	dxcc	cont	itu	cq	first seen	last seen
-ZL3X		RE66IR	ZL	OC	60	32	5 years ago	online
-BH4XDZ	10m,15m,17m,20m,40m	OM94NO	BY	AS	44	24	5 years ago	online
-... paste everything here ...
-"""
-
-GRID_RE = re.compile(r"^[A-Ra-r]{2}\d{2}([A-Xa-x]{2})?([0-9]{2})?$")
+RAW_FILE = "spotters_raw.txt"
+OUT_FILE = "spotter_coords.csv"
 
 
-def maidenhead_to_latlon(locator: str):
-    loc = locator.strip().upper()
-    if len(loc) < 4:
-        raise ValueError("locator too short")
+def grid_to_latlon(grid: str):
+    """
+    Convert Maidenhead grid (4 or 6 chars) -> (lat, lon)
+    Matches the common conversion used in ham tools.
+    """
+    grid = (grid or "").strip()
+    if len(grid) < 4:
+        raise ValueError("Grid too short")
 
-    lon = -180.0
-    lat = -90.0
+    upper = "ABCDEFGHIJKLMNOPQR"
+    digits = "0123456789"
+    lower = "abcdefghijklmnopqrstuvwx"
 
-    # Field
-    lon += (ord(loc[0]) - 65) * 20
-    lat += (ord(loc[1]) - 65) * 10
+    g = grid.strip()
+    g0 = g[0].upper()
+    g1 = g[1].upper()
+    g2 = g[2]
+    g3 = g[3]
 
-    # Square
-    lon += int(loc[2]) * 2
-    lat += int(loc[3]) * 1
+    if g0 not in upper or g1 not in upper or g2 not in digits or g3 not in digits:
+        raise ValueError("Invalid grid format")
 
-    lon_size = 2.0
-    lat_size = 1.0
+    lon = -180 + upper.index(g0) * 20 + digits.index(g2) * 2
+    lat = -90 + upper.index(g1) * 10 + digits.index(g3) * 1
 
-    # Subsquare
-    if len(loc) >= 6 and loc[4].isalpha():
-        lon += (ord(loc[4]) - 65) * (2.0 / 24)
-        lat += (ord(loc[5]) - 65) * (1.0 / 24)
-        lon_size /= 24
-        lat_size /= 24
+    # center of the 2°x1° square
+    lon += 1.0
+    lat += 0.5
 
-    # Extended
-    if len(loc) >= 8 and loc[6].isdigit():
-        lon += int(loc[6]) * (lon_size / 10)
-        lat += int(loc[7]) * (lat_size / 10)
-        lon_size /= 10
-        lat_size /= 10
+    # subsquare (6-char)
+    if len(g) >= 6:
+        g4 = g[4].lower()
+        g5 = g[5].lower()
+        if g4 not in lower or g5 not in lower:
+            raise ValueError("Invalid subsquare")
+        lon = lon - 1.0 + (lower.index(g4) + 0.5) * (2.0 / 24.0)
+        lat = lat - 0.5 + (lower.index(g5) + 0.5) * (1.0 / 24.0)
 
-    return round(lat + lat_size / 2, 3), round(lon + lon_size / 2, 3)
+    return round(lat, 3), round(lon, 3)
 
 
 def main():
-    rows = OrderedDict()
+    rows_out = []
+    seen = set()
 
-    for line in RBN_DATA.splitlines():
-        if not line.strip() or line.lower().startswith("callsign"):
-            continue
+    with open(RAW_FILE, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
 
-        # Prefer tabs
-        parts = line.split("\t")
-        if len(parts) < 3:
-            continue
+            # Skip header line
+            if line.lower().startswith("callsign"):
+                continue
 
-        callsign = re.sub(r"\s+", "-", parts[0].strip())
-        grid = parts[2].strip()
+            # Your data is TAB-separated
+            parts = line.split("\t")
 
-        if not callsign or not grid or not GRID_RE.match(grid):
-            continue
+            # If someone pasted with spaces instead of tabs, try a fallback:
+            # We only trust it if we can still find a plausible grid in column 3.
+            if len(parts) < 3:
+                # fallback: split on whitespace, but this is less reliable
+                parts = line.split()
 
-        try:
-            lat, lon = maidenhead_to_latlon(grid)
-        except Exception:
-            continue
+            if len(parts) < 3:
+                continue
 
-        # keep LAST occurrence
-        rows[callsign] = (lat, lon)
+            callsign = (parts[0] or "").strip()
+            grid = (parts[2] or "").strip()
 
-    with open("updated_spotter_coords.csv", "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["callsign", "latitude", "longitude"])
-        for cs, (lat, lon) in rows.items():
-            w.writerow([cs, lat, lon])
+            if not callsign or not grid:
+                continue
 
-    print(f"Wrote {len(rows)} spotters to updated_spotter_coords.csv")
+            # Normalize callsign spacing
+            callsign = " ".join(callsign.split())
+
+            try:
+                lat, lon = grid_to_latlon(grid)
+            except Exception:
+                # Bad/odd grid -> skip
+                continue
+
+            key = callsign.upper()
+            if key in seen:
+                continue
+            seen.add(key)
+
+            rows_out.append({"callsign": callsign, "latitude": lat, "longitude": lon})
+
+    with open(OUT_FILE, "w", newline="", encoding="utf-8") as out:
+        w = csv.DictWriter(out, fieldnames=["callsign", "latitude", "longitude"])
+        w.writeheader()
+        w.writerows(rows_out)
+
+    print(f"✅ Wrote {len(rows_out)} rows to {OUT_FILE}")
 
 
 if __name__ == "__main__":
