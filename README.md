@@ -43,7 +43,7 @@ RBN Signal Mapper is a web application designed to visualize Reverse Beacon Netw
 
 1. Run the application:
    ```bash
-   streamlit run app.py
+   streamlit run web.py
    ```
 
 2. Open your web browser and navigate to `http://localhost:8501`.
