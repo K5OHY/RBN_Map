@@ -14,6 +14,7 @@ import numpy as np
 import math
 
 from geographiclib.geodesic import Geodesic
+import maidenhead as mh
 
 DEFAULT_GRID_SQUARE = "DM81wx"  # Default grid square location
 
@@ -251,22 +252,13 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
     m.get_root().html.add_child(folium.Element(legend_html))
 
     return m
-# Rest of your functions (grid_square_to_latlon, process_pasted_data, etc.) remain unchanged
+# Rest of your functions (process_pasted_data, etc.) remain unchanged
 def grid_square_to_latlon(grid_square):
-    upper_alpha = "ABCDEFGHIJKLMNOPQR"
-    digits = "0123456789"
-    lower_alpha = "abcdefghijklmnopqrstuvwx"
-
-    grid_square = grid_square.upper()
-
-    lon = -180 + (upper_alpha.index(grid_square[0]) * 20) + (digits.index(grid_square[2]) * 2)
-    lat = -90 + (upper_alpha.index(grid_square[1]) * 10) + (digits.index(grid_square[3]) * 1)
-
-    if len(grid_square) == 6:
-        lon += (lower_alpha.index(grid_square[4].lower()) + 0.5) / 12
-        lat += (lower_alpha.index(grid_square[5].lower()) + 0.5) / 24
-
-    return lat, lon
+    # Uses maidenhead.to_location(center=True) for both 4- and 6-character grids, so a
+    # 4-character grid now returns its centre point rather than its south-west corner (the
+    # old hand-rolled version only centred 6-character grids) - a deliberate consistency fix,
+    # not a silent behaviour change.
+    return mh.to_location(grid_square, center=True)
 
 def process_pasted_data(pasted_data):
     lines = pasted_data.split('\n')
