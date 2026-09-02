@@ -7,4 +7,6 @@ matplotlib
 requests
 beautifulsoup4
 geopy
+maidenhead
+pytest
 
