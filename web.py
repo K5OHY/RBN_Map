@@ -226,7 +226,7 @@ def create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons
      <div style="position: absolute; top: 20px; right: 20px; width: 150px; height: auto; 
      border:1px solid grey; z-index:9999; font-size:10px; background-color:white; padding: 10px;">
      <b>Callsign: {callsign}</b><br>Total Spots: {stats['spots']}<br>
-     Max Distance: {stats['max_distance']:.2f} mi<br>Max SNR: {stats['max_snr']} dB<br>
+     Max Distance: {stats['max_distance']:.2f} {stats['distance_unit']}<br>Max SNR: {stats['max_snr']} dB<br>
      Average SNR: {stats['avg_snr']:.2f} dB<br><b>Bands:</b><br>{band_stats}
      </div>
      '''
@@ -315,26 +315,28 @@ def process_downloaded_data(filename):
     df['time'] = pd.to_datetime(df['time'])
     return df
 
-def calculate_statistics(filtered_df, grid_square_coords, spotter_coords):
+def calculate_statistics(filtered_df, grid_square_coords, spotter_coords, distance_unit='mi'):
     spots = len(filtered_df)
     avg_snr = filtered_df['snr'].mean()
     max_snr = filtered_df['snr'].max()
     bands = filtered_df['band'].value_counts().to_dict()
-    
+
     max_distance = 0
     if not filtered_df.empty:
         for _, row in filtered_df.iterrows():
             spotter = row['spotter']
             if spotter in spotter_coords:
                 coords = spotter_coords[spotter]
-                distance = geodesic(grid_square_coords, coords).miles
+                geo_distance = geodesic(grid_square_coords, coords)
+                distance = geo_distance.km if distance_unit == 'km' else geo_distance.miles
                 if distance > max_distance:
                     max_distance = distance
-    
+
     return {
         'spots': spots,
         'avg_snr': avg_snr,
         'max_distance': max_distance,
+        'distance_unit': distance_unit,
         'max_snr': max_snr,
         'bands': bands
     }
@@ -355,6 +357,7 @@ def main():
         callsign = st.text_input("Enter Callsign:")
         grid_square = st.text_input("Enter Grid Square (optional):")
         show_all_beacons = st.checkbox("Show all reverse beacons")
+        distance_unit = 'km' if st.radio("Distance units", ('Miles', 'Kilometers')) == 'Kilometers' else 'mi'
         data_source = st.radio(
             "Select data source",
             ('Paste RBN data', 'Download RBN data by date')
@@ -459,7 +462,7 @@ def main():
                 if selected_band != 'All':
                     filtered_df = filtered_df[filtered_df['band'] == selected_band]
 
-                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
+                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords, distance_unit)
 
                 m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, use_band_column, callsign, stats)
                 map_html = m._repr_html_()
@@ -499,7 +502,7 @@ def main():
                 else:
                     grid_square_coords = grid_square_to_latlon(DEFAULT_GRID_SQUARE)
 
-                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords)
+                stats = calculate_statistics(filtered_df, grid_square_coords, spotter_coords, distance_unit)
 
                 m = create_map(filtered_df, spotter_coords, grid_square_coords, show_all_beacons, grid_square, True, callsign, stats)
                 map_html = m._repr_html_()
