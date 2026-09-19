@@ -1,10 +1,7 @@
-streamlit==1.19.0
-altair==4.2.2
-
+streamlit>=1.37
 pandas
+numpy
 folium
 matplotlib
 requests
-beautifulsoup4
-geopy
-
+geographiclib

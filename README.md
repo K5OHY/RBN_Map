@@ -1,84 +1,56 @@
-
 # RBN Signal Mapper
 
-RBN Signal Mapper is a web application designed to visualize Reverse Beacon Network (RBN) data on a map. Users can input a callsign and grid square, and either paste RBN data manually or download it by date. The application generates a map that can be downloaded as an HTML file.
+Map the [Reverse Beacon Network](https://www.reversebeacon.net/) stations that spotted your CQ, and how strong your signal was.
 
-## Features
-
-- Visualize RBN data on a map
-- Option to show all reverse beacons
-- Filter data by specific bands
-- Display UTC time of spots in the popup
-- Download the generated map
-- Automatic download of the latest available RBN data if date input is left blank
-
-## Screenshot
+Enter a callsign and a date, and the app draws a path from your station to every skimmer that heard you. Spots are coloured by band, and the dots are sized and coloured by SNR.
 
 ![RBN Signal Mapper Screenshot](images/Screenshot.png)
 
-## Installation
+## Features
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/K5OHY/RBN_Map.git
-   ```
+- **Automatic location:** the map is centered on your callsign's registered location (RBN skimmer list, then FCC via [callook.info](https://callook.info), then [HamDB](https://hamdb.org), and finally the centre of the callsign's country as an approximate fallback). Type a grid square to override it, for example when operating portable.
+- **Always-current skimmer list:** skimmer locations are fetched from reversebeacon.net and refreshed automatically every 24 hours.
+- **One day or a date range** (up to 7 days) of RBN history, or paste rows copied from the RBN website.
+- **Filters:** band, UTC time window and minimum SNR update the map instantly.
+- **Stats:** spot count, skimmers, farthest skimmer (circled on the map), best and average SNR. Miles or kilometres.
+- **Map styles:** light, dark, satellite or street. No API keys needed.
+- **Download** the map as a standalone HTML file to share.
+- Remembers your settings between sessions when run on your own computer.
 
-2. Change to the project directory:
-   ```bash
-   cd RBN_Map
-   ```
+## Run it locally
 
-3. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-   ```
+You need [Python 3.9+](https://www.python.org/downloads/).
 
-4. Install the required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/K5OHY/RBN_Map.git
+cd RBN_Map
+python -m venv venv
+venv\Scripts\activate        # macOS/Linux: source venv/bin/activate
+pip install -r requirements.txt
+streamlit run web.py
+```
 
-## Usage
+Then open http://localhost:8501.
 
-1. Run the application:
-   ```bash
-   streamlit run web.py
-   ```
+To force a skimmer list refresh: `python rbn_to_csv.py`.
 
-2. Open your web browser and navigate to `http://localhost:8501`.
+## Files
 
-3. Follow the instructions on the web page:
-   - Enter a callsign and grid square (optional).
-   - Select the data source (paste RBN data manually or download by date).
-   - Optionally, choose to show all reverse beacons.
-   - Select the band to filter the data (or choose 'All' for no filter).
-   - Click "Generate Map" to visualize the signal map.
-   - Download the generated map using the provided download button.
+| File | Purpose |
+| --- | --- |
+| `web.py` | The Streamlit app (UI, map, stats) |
+| `rbn_data.py` | Skimmer list refresh, callsign location lookup, grid-square conversion |
+| `spotter_coords.csv` | Cached skimmer locations (auto-updated) |
+| `cty.dat` | Country prefix file from [country-files.com](https://www.country-files.com) for the approximate-location fallback (auto-updated monthly) |
+| `rbn_to_csv.py` | Command-line shortcut to refresh the skimmer list |
 
-## Requirements
+## Data sources and thanks
 
-- Python 3.7 or higher
-- Streamlit
-- Pandas
-- Folium
-- Matplotlib
-- Requests
-- Geopy
+- [Reverse Beacon Network](https://www.reversebeacon.net/): spots and skimmer locations
+- [callook.info](https://callook.info) and [HamDB](https://hamdb.org): callsign locations
+- Map tiles: Esri, OpenStreetMap contributors
+- Built with [Streamlit](https://streamlit.io/), [Folium](https://python-visualization.github.io/folium/), [pandas](https://pandas.pydata.org/) and [GeographicLib](https://geographiclib.sourceforge.io/)
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Acknowledgements
-
-- [Reverse Beacon Network](https://www.reversebeacon.net/)
-- [Streamlit](https://www.streamlit.io/)
-- [Folium](https://python-visualization.github.io/folium/)
-- [Pandas](https://pandas.pydata.org/)
-- [Matplotlib](https://matplotlib.org/)
-- [Geopy](https://geopy.readthedocs.io/)
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request with your improvements.
+MIT License.
