@@ -4,7 +4,7 @@ Map the [Reverse Beacon Network](https://www.reversebeacon.net/) stations that s
 
 Enter a callsign and a date, and the app draws a path from your station to every skimmer that heard you. Spots are coloured by band, and the dots are sized and coloured by SNR.
 
-![RBN Signal Mapper Screenshot](images/Screenshot.png)
+![RBN Signal Mapper Screenshot](images/rbn-map-v2.png)
 
 ## Features
 
