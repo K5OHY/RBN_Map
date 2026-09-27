@@ -6,3 +6,5 @@ settings.json
 .spotters_refreshed
 RBN_Map-main/
 .claude/
+env/
+beta/
