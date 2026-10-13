@@ -1,183 +1,91 @@
 # RBN Signal Mapper
 
-Map the [Reverse Beacon Network](https://www.reversebeacon.net/) stations that spotted your CQ, and see how strong your signal was.
-
-Enter a callsign and load your spots, and the app draws a path from your station to every skimmer that heard you. Paths are coloured by band, and the dots are sized and coloured by SNR. A **compare mode** lines up two frequencies (two antennas, two power levels, two test transmissions) and tells you which one is getting out better.
+See who heard you, how strong, and from where. Map the [Reverse Beacon Network](https://www.reversebeacon.net/) stations that spotted your CQ, or the [WSPR](https://wsprnet.org/) stations that heard your beacon. Compare mode tells you which of two antennas, frequencies or power levels is getting out better.
 
 **Use it online, nothing to install: [rbnmap.streamlit.app](https://rbnmap.streamlit.app/)**
 
 ![RBN Signal Mapper Screenshot](images/Screenshot.png)
 
-## Contents
-
-- [Quick start](#quick-start)
-- [Using the website](#using-the-website)
-- [Getting your spots in](#getting-your-spots-in)
-- [Features](#features)
-- [Compare mode: which antenna is better?](#compare-mode-which-antenna-is-better)
-- [Run it locally](#run-it-locally)
-- [Troubleshooting](#troubleshooting)
-- [Files](#files)
-- [Data sources and thanks](#data-sources-and-thanks)
-
 ## Quick start
 
-1. Open [rbnmap.streamlit.app](https://rbnmap.streamlit.app/) (or [run it locally](#run-it-locally)).
+1. Open the site (or [run it locally](#run-it-locally)).
 2. Type your **callsign** in the sidebar.
-3. Choose where the spots come from: **Download by date** for a past day, or **Paste from RBN site** for spots from the last few minutes or hours.
-4. Click **Load spots**.
-5. Use the filters and map settings in the sidebar to explore, and download the map if you want to share it.
+3. Pick where the spots come from, then click **Load spots**.
+4. Use the filters in the sidebar, and download the map or a PDF report if you want to share it.
 
-## Using the website
+The hosted site does not remember your settings; a local copy does (in `settings.json`). Free hosting can fall asleep: click the button to wake it.
 
-The hosted app at [rbnmap.streamlit.app](https://rbnmap.streamlit.app/) is the same app you can run yourself. Everything is in the sidebar on the left, and the results appear on the right.
+## Getting your spots
 
-1. **Callsign.** Your callsign, for example `K5OHY`. The map is centred on your registered location.
-2. **Grid square (optional).** Leave it blank to use your callsign's registered address. Enter a 4, 6 or 8 character grid (for example `EM10` or `EM10ci`) if you were portable, or if the lookup could not find you.
-3. **Where are the spots from?** See [Getting your spots in](#getting-your-spots-in).
-4. **Load spots.** Nothing is fetched until you click this. After that the filters below update the map instantly.
-5. **Filters.** Band, UTC time window, and minimum SNR.
-6. **Compare mode.** Off by default. See [Compare mode](#compare-mode-which-antenna-is-better).
-7. **Map.** Choose a map style, show every skimmer on the map, and switch between miles and kilometres.
+**RBN: Download by date.** Pick a day or a range (up to 7 days). Works for anything up to yesterday (UTC), because RBN publishes a day's file after that day ends. Only spots of your callsign are kept.
 
-Notes for the website:
+**RBN: Paste from RBN site.** For spots from the last few minutes or hours, and for quick tests. Look up your callsign on [reversebeacon.net](https://www.reversebeacon.net/), copy the spot rows, paste them into the box, and click Load spots. The app reads each field by what it looks like, so odd spacing is fine.
 
-- Free Streamlit hosting can put an app to sleep when nobody has used it for a while. If you see a message saying so, click the button to wake it up. It can take a short while to start.
-- The hosted app does **not** remember your settings between visits, because it is shared. Run it locally if you want your callsign and preferences saved.
-- Downloading a whole day of RBN data can take a minute. The progress bar shows what it is doing.
+**WSPR.** Pick a date (today works) and click Load spots. The app looks up WSPR spots sent by the callsign you entered, so use the callsign your WSPR transmitter sends. Reports take about 5 minutes to arrive in full; a newer cycle is still used and marked *may be incomplete*. Click Load spots again to refresh.
 
-## Getting your spots in
+WSPR differs from RBN in a few ways: SNR is mostly negative (about -30 to +5 dB), the stations are called receivers, and *Show all skimmers* is off because there is no list of every WSPR receiver.
 
-There are two ways to load spots.
+## The map
 
-### Download by date
+- Paths from you to every station that heard you, drawn as great circles and coloured by band.
+- Dots sized and coloured by SNR. Click one for every spot from that station. The farthest station is circled.
+- Filters: **Band**, **UTC time window** (one-minute steps), and **Minimum SNR** (RBN). They update the map instantly.
+- With Compare mode off, a **World view from your station** below the map: the same azimuthal map, coloured by average SNR or by how many stations heard you in each direction and distance cell.
+- Stats above the map, a compass chart of your spots by direction below it, and a sortable spot table.
+- Map style (light, dark, satellite, street), miles or kilometres, and **Download map** (a standalone HTML file).
+- **Download report (PDF)** next to it: key numbers, direction chart, a by-band table and the stations that heard you.
 
-Use this for anything up to yesterday (UTC).
+Your location comes from the grid you typed, else the RBN skimmer list, else the FCC ([callook.info](https://callook.info)), else [HamDB](https://hamdb.org), else the centre of your country (the app warns you). Enter a grid for an exact pin.
 
-- **Single day:** pick a date.
-- **Date range:** pick a From and To date, up to 7 days. Each day is a separate download.
+## Compare two antennas
 
-The app pulls RBN's daily history file, keeps only spots of your callsign, and throws the rest away. RBN publishes each day's file after the UTC day ends, so **today's spots are not available this way**. If you pick a date with no file yet, the app tells you to try an earlier date.
+Tick **Compare two antennas or tests**. Name your antennas under *Name your antennas* if you like.
 
-### Paste from RBN site
+### With WSPR (best for antennas)
 
-Use this for spots from right now, or for anything the daily files do not have yet. This is the way to go for quick antenna tests.
+A WSPR transmission lasts about 110 seconds of each 2-minute slot, so there is a short break between transmissions. Flip the antenna switch in that break.
 
-1. Go to [reversebeacon.net](https://www.reversebeacon.net/) and look up the spots for your callsign.
-2. Select the spot rows in the table and copy them. It does not matter whether you include the header row.
-3. Paste them into the **Paste spot rows here** box in the sidebar.
-4. Click **Load spots**.
+1. Connect the transmitter to an A/B coax switch with one antenna on each output. Use one band, one power and one callsign for the whole test.
+2. Let the transmitter send in every slot. If it can send an extra packet between cycles (for example a 6-character locator option), turn that off.
+3. Wait for the transmission to end, flip the switch, and let the next one start. Go **A, B, A, B** or **A, B, B, A**, always starting on A. Note the time of the first transmission.
+4. Run at least 8 transmissions (4 pairs, about 16 minutes). Fewer is a quick check; 12 to 16 is better for small differences.
+5. Wait about 5 minutes, pick the date, and click Load spots.
+6. Under **Your test**, set **Transmissions in your test** (every 2-minute cycle on either antenna counts: A then B is 2), and **Starting at** if it was not the latest test. It shows how small a difference that many pairs can reliably show. Check the **Order** and the Antenna column match your notes, and read the result. Fix any row, or clear it to leave it out.
 
-Each row looks like this once pasted:
+**Long tests.** For a long, time-averaged test (one antenna for 30 minutes or an hour, then the other, over several hours), choose **In long blocks** under *Your test*, then give the start time, minutes per block and number of blocks. Every transmission in a block counts for that block's antenna, and each receiver's reports on A and on B are compared as a whole. Aim for 20 or more reports per receiver on each antenna.
 
-```
-K1RA-4    K5OHY    DM81wx    1443 mi    14073.0    CW    CQ    7 dB    25 wpm    1908z 26 Sep    94 seconds ago
-```
+Use an even number of transmissions: an odd one has no partner and is left out.
 
-The app reads the fields by what they look like, not by column position, so it also copes with tabs turned into spaces, thousands separators in the distance, and a missing "seen" column. If it cannot read any rows, it shows the first line it could not read.
+### With RBN
 
-## Features
+Call CQ with the first antenna on one frequency, then with the other antenna on a nearby frequency, back to back (a minute or two apart). Paste the spots and click Load spots. The two biggest frequency groups become A and B; change them with the dropdowns. Skimmers report slightly different frequencies for the same signal, so spots closer than 0.5 kHz count as one (it looks closer if your two tests are nearer than that). RBN is compared by frequency only, because skimmers report a spot a minute or more after you send, which is too blurry to separate A and B by the clock.
 
-### Map
+Send plenty of CQs on each side, at the same power and speed (or enter the power under **Power**).
 
-- **Paths from you to every skimmer** that heard you, drawn as great circles (the real shortest route over the globe), so they curve the way radio paths do and do not jump across the edge of the map.
-- **Colour by band.** Paths use the same band colours as the RBN website.
-- **Dots by SNR.** Each skimmer's dot is sized and coloured by signal strength: small green for weak (about 5 dB), yellow for medium, large dark red for strong (35 dB and above). A legend in the corner shows the scale and how many spots there are per band.
-- **Click a dot** to see the skimmer, band, frequency, SNR, time (UTC) and distance.
-- **Farthest skimmer** is circled on the map and labelled with its distance.
-- **Layers.** The layer button (top right of the map) turns the paths, the spots, and the optional "all skimmers" layer on and off.
-- **Show all skimmers** (sidebar) adds a small grey dot for every RBN skimmer, including the ones that did not hear you. Useful for seeing where you were *not* heard.
-- **Map style.** Light, dark, satellite or street. No API keys are needed.
-- **Distance units.** Miles or kilometres, used everywhere in the app.
-- **Download map.** Saves the map as a standalone HTML file that works offline in any browser. Good for sharing.
+### Reading the result
 
-### Your location
+- **Result.** The verdict first, in plain English, with the evidence and any caveats. Then a scoreboard, who heard you on each side, and a timeline of every spot in the order it happened. **Download report (PDF)** sits under the verdict.
+- **Direction & distance.** A world map centred on your station (distance from the centre is true distance, angle is true compass bearing), coloured by direction and distance: which antenna is stronger, or the SNR with A or B, or just the receivers (filled where both antennas were heard, open where only one was), so you can see whether an antenna is getting out toward Europe, Asia or Oceania; zoom between nearby, half the world and the whole world. Then a rose chart of how much stronger one side is toward each direction (longer bar means a bigger difference; blue A, orange B; fainter or hatched for fewer receivers; pick 45, 30 or 15 degree sectors, or one direction to see its numbers), the average SNR by direction, and the same by distance range.
+- **Receiver by receiver.** Every station that heard both sides, as a chart and a table.
+- **Linear average.** The standard SNR average next to the same comparison done by averaging power instead of dB (each report turned into power, averaged per antenna, turned back into dB), overall and by direction, with when to use which.
+- **Maps.** A's map and B's map side by side.
 
-The map pin is placed using the first of these that works:
+Differences are always shown as who is ahead and by how much (for example *B +2.0 dB*), never as a negative number.
 
-1. The grid square you typed in the sidebar.
-2. The RBN skimmer list, if your callsign is also a skimmer.
-3. The FCC database via [callook.info](https://callook.info) (US callsigns).
-4. [HamDB](https://hamdb.org) (many other countries).
-5. The centre of your callsign's country, as an approximate fallback. The app warns you when it does this, so you can enter a grid for an accurate map.
+### How the verdict is decided
 
-The pin's popup tells you which source was used.
-
-### Filters
-
-All three update the map instantly, without reloading anything.
-
-- **Band.** All, or one band from 160m to 6m.
-- **UTC time window.** Only show spots between two times of day.
-- **Minimum SNR.** Hide weak reports.
-
-### Stats
-
-Above the map you get: total spots, number of skimmers, farthest skimmer (with distance), best SNR, and average SNR. If some skimmers are not in the RBN node list, the app lists them and says they cannot be shown on the map.
-
-### Direction of your spots
-
-Below the map, a compass chart splits your spots into 16 directions. Bar length is the number of spots in that direction, and the colour is the average SNR (same colour scale as the map). A summary tells you where you got the most spots and where you were strongest on average. This is handy for seeing what a beam or a vertical really does.
-
-### Spot table
-
-Expand **Spot table** at the bottom to see every spot as a sortable table.
-
-### Always-current skimmer list
-
-Skimmer locations come straight from reversebeacon.net and are refreshed automatically once every 24 hours. Skimmers that later drop off RBN's list are kept, so old history files still plot correctly.
-
-### Remembers your settings (locally)
-
-When you run it on your own computer, the app saves your callsign, grid, band, map style and other choices in `settings.json` and restores them next time. This is switched off on the shared website.
-
-## Compare mode: which antenna is better?
-
-Compare mode is for A/B tests: send on one frequency, change the antenna (or power, or anything else) and frequency, then send again. Reverse Beacon Network skimmers report both, and the app lines them up.
-
-### How to run a test
-
-1. Call CQ on frequency **A** for a few minutes.
-2. Change to frequency **B** (a few kHz away is fine) with the other antenna, and call CQ for a few minutes.
-3. Copy the spot rows from the RBN website and **paste** them in (see [Paste from RBN site](#paste-from-rbn-site)). This works for spots from the last few minutes, so you do not have to wait for the daily file.
-4. Tick **Compare two frequencies** in the sidebar and click **Load spots**.
-
-Tips for a fair test:
-
-- Keep the two tests **close together in time**. Propagation drifts, so a gap of an hour or more can make one frequency look better for reasons that have nothing to do with the antenna.
-- Give each frequency a few minutes, so plenty of skimmers hear it.
-- Use the same power and the same speed for both.
-
-### Picking the two frequencies
-
-Compare mode splits your spots into groups of nearby frequencies. Skimmers report slightly different frequencies for the same signal, so spots closer together than the **Frequency gap** (default 0.5 kHz) are treated as one frequency.
-
-- The two biggest groups are chosen for you as **A** and **B**. Change them with the two dropdowns, which show each group's frequency, number of spots and time span.
-- If two of your tests were merged into one group, lower the **Frequency gap** in the sidebar. If one test was split in two, raise it.
-
-### Reading the results
-
-The **Results** tab shows:
-
-1. **The answer in one line.** For example: "A (14071.9 kHz) is getting out better: it reached more skimmers and had the stronger signal." If the two split (one reached more skimmers, the other was stronger), it says "Mixed result". If neither is clearly ahead, it says "Too close to call".
-2. **A scoreboard** with A and B side by side. The winner of each row is highlighted:
-   - **Skimmers that heard you.** More is better. Under each number is how many skimmers heard *only* that frequency.
-   - **Average SNR.** This compares only the skimmers that heard **both** frequencies, so it is a like-for-like comparison. A frequency only wins if its lead is bigger than random variation would explain (a 95% confidence check). Otherwise the row is a tie.
-   - **Strongest direction.** The compass direction where each frequency's signal was best.
-3. **Direction.** A compass chart with both frequencies overlaid, blue for A and orange for B. Distance from the centre is the average SNR toward that direction, so a bigger shape in a direction means a stronger signal that way. Next to it, the app lists the directions where A is stronger, where B is stronger (by at least 2 dB), and any directions only one of them reached.
-4. **Same skimmer, both frequencies.** A table of every skimmer that heard both, with its distance, A's SNR, B's SNR, the difference, and which was stronger (the stronger SNR is tinted). Click a column heading to sort, for example by difference to see where one side wins by the most. Each SNR is the median of that skimmer's spots, so a single odd report does not skew a row.
-
-The **Side-by-side maps** tab shows the map for A next to the map for B. Both use the same view, the same SNR colours and the same dot sizes, so they are directly comparable. Each map has its own download button.
-
-Compare mode works with either source (download or paste), and the sidebar filters (band, time window, minimum SNR) apply before the frequencies are split.
+- **Strength.** Only stations that heard both sides count, so each station is its own control. Each station's difference is averaged, with a 95% range. A side wins if the whole range favours it and the gap is at least 1 dB; a smaller gap is *equal*.
+- **Reach.** How many different stations heard each side. For WSPR it is judged one pair of transmissions at a time, because fading on your end moves every receiver together. Fewer than 6 pairs can't be called.
+- **Too close to call** means the data can't separate them; it is not the same as equal. If one side leads, the verdict gives the chance it really is ahead (for example about 88%), and for RBN how much more data would settle it.
+- **Direction and distance** are only called when at least 4 stations heard both sides there, the gap is at least 2 dB, and a stricter 99% range agrees.
+- **Two ways of averaging.** The default takes the dB difference at each receiver, a power ratio, and finds the typical difference. That works for short tests because A and B are measured minutes apart, but it adds up dB, and it depends on conditions being similar in neighbouring transmissions. The **Linear average** tab averages power instead: every report is turned from dB into power, each antenna's reports are averaged, and the ratio is turned back into dB. That is a true power average and doesn't rely on two particular transmissions matching, but it needs many reports per receiver (20 to 40, so hours of data), it is swung by a few strong reports (0, 0, 0 and 20 dB average to 14 dB, not 5), and it is thrown off by reports at WSPR's -28 dB decoding floor. For a short switched test, trust the default; for a long, time-averaged run, the power average; and if the two agree within 1 dB you can be more confident.
+- **Fairness.** For WSPR only receivers that were listening during both sides' transmissions count, and cycles heard by 2 or fewer receivers are ignored when normal cycles are heard by many more (usually one receiver with a wrong clock). A cycle with no partner on the other antenna is left out. Power differences are corrected (WSPR carries the power). Skimmers at the same place are counted once. If A and B were sent more than about 10 minutes apart, the verdict warns that the time of day could explain the difference.
 
 ## Run it locally
 
-You need [Python 3.9+](https://www.python.org/downloads/) and about a minute.
+You need [Python 3.9+](https://www.python.org/downloads/).
 
-### Windows (PowerShell or Windows Terminal)
-
-Set it up once:
+**Windows (PowerShell).** Set it up once:
 
 ```bash
 git clone https://github.com/K5OHY/RBN_Map.git
@@ -186,17 +94,15 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-Then start the app, from the project folder:
+Then start it from the project folder:
 
 ```bash
 .venv\Scripts\streamlit run web.py
 ```
 
-Use exactly that command. Typing plain `streamlit run web.py` fails with "streamlit is not recognized", because the packages are installed inside `.venv` and Windows does not know where to find them unless the environment is activated. Calling `.venv\Scripts\streamlit` directly means you never have to activate anything.
+Use exactly that command. Plain `streamlit run web.py` fails with "not recognized" because the packages live inside `.venv`. If `python` is not found, try `py -m venv .venv`.
 
-If `python` is not found, try `py -m venv .venv` instead.
-
-### macOS / Linux
+**macOS / Linux.**
 
 ```bash
 git clone https://github.com/K5OHY/RBN_Map.git
@@ -206,57 +112,45 @@ python3 -m venv .venv
 .venv/bin/streamlit run web.py
 ```
 
-### Every time after that
+Next time, just run the last command again. Open http://localhost:8501 if the browser does not open, and stop the app with Ctrl+C (close the browser tab first if it hangs).
 
-Open a terminal in the project folder and run the last command again (`.venv\Scripts\streamlit run web.py` on Windows, `.venv/bin/streamlit run web.py` on macOS/Linux).
-
-Streamlit prints a local address and usually opens your browser. If it does not, open http://localhost:8501. Stop the app with Ctrl+C in the terminal.
-
-### Updating the skimmer list by hand
-
-The app refreshes the skimmer list on its own every 24 hours. To force it right now:
-
-```bash
-.venv\Scripts\python rbn_to_csv.py
-```
-
-(On macOS/Linux: `.venv/bin/python rbn_to_csv.py`.)
+The skimmer list refreshes itself every 24 hours. To force it: `.venv\Scripts\python rbn_to_csv.py` (macOS/Linux: `.venv/bin/python rbn_to_csv.py`).
 
 ## Troubleshooting
 
-| What you see | What it means and what to do |
+| What you see | What to do |
 | --- | --- |
-| "RBN has no data file for ... yet" | RBN publishes a day's file after the UTC day ends. Pick an earlier date, or use **Paste from RBN site** for today's spots. |
-| "RBN has no spots of ... for that date" | Check the callsign, or try another day. If you pasted rows, make sure they are spots of your callsign. |
-| "Couldn't read any spot rows from the pasted text" | The pasted text is not in the RBN spot table format. The message quotes the first line it could not read. Copy the rows straight from the RBN spot table. |
+| "RBN has no data file for ... yet" | RBN publishes a day's file after the UTC day ends. Pick an earlier date, or paste today's spots. |
+| "RBN has no spots of ... for that date" | Check the callsign or try another day. |
+| "Couldn't read any spot rows" | Copy the rows straight from the RBN spot table. The message quotes the first line it couldn't read. |
 | "Couldn't find a location for ..." | Enter your grid square in the sidebar. |
-| A warning that the pin is at the centre of a country | The lookups found nothing more precise. Enter your grid square for an accurate map. |
-| "No location for ..." under the stats | Those skimmers are not in the RBN node list, so they are counted but not drawn on the map. |
-| Compare mode says it found only one frequency group | Your spots are on one frequency, or the **Frequency gap** is too wide and merged your tests. Lower the gap in the sidebar. |
-| Compare mode says no skimmer heard both frequencies | There is nothing to compare like for like. Compare the skimmer counts and directions instead, or try again with longer tests. |
-| Downloading is slow | A day of RBN data is a large file, and each day in a range is a separate download. Results are cached for an hour. |
+| "No location for ..." under the stats | Those skimmers are not in RBN's node list, so they are counted but not drawn. |
+| Compare found only one frequency group | Your spots are on one frequency, or your two tests were less than 0.1 kHz apart. Use a different frequency for each antenna. |
+| A few WSPR cycles show only one or two receivers while the rest show dozens | Usually one receiver with a wrong clock. The app ignores them and says how many. |
+| "Not enough data yet" / too close to call | Run more transmissions per antenna (see above). |
+| Downloading is slow | A day of RBN data is a large file. Each day in a range is a separate download. Results are cached for an hour. |
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `web.py` | The Streamlit app: interface, maps, stats, compare mode |
-| `rbn_data.py` | Skimmer list refresh, callsign location lookup, grid-square conversion |
+| `web.py` | The Streamlit app |
+| `compare_stats.py` | The A/B maths and the plain-English verdict |
+| `report_pdf.py` | Lays out the PDF reports |
+| `rbn_data.py` | Skimmer list, callsign location lookup, grid conversion |
+| `wspr_data.py` | Fetches WSPR spots |
+| `world_map.py` | Draws the world map centred on your station |
+| `world_land.npz`, `build_world_mask.py` | The land/ocean grid the map is drawn from, and the one-off script that built it |
 | `spotter_coords.csv` | Cached skimmer locations (updated automatically) |
-| `cty.dat` | Country prefix file from [country-files.com](https://www.country-files.com), used for the approximate-location fallback (updated monthly) |
-| `rbn_to_csv.py` | Command-line shortcut to refresh the skimmer list now |
-| `Update_spotters.py` | Older helper: converts an RBN node table you paste into the script into `updated_spotter_coords.csv`. Not needed for normal use. |
-| `requirements.txt` | Python packages to install |
-| `settings.json` | Your saved settings (created locally, never committed) |
-| `images/` | Screenshot used by this README |
+| `cty.dat` | Country prefixes from [country-files.com](https://www.country-files.com), for the approximate-location fallback |
+| `rbn_to_csv.py` | Refreshes the skimmer list now |
+| `Update_spotters.py` | Older helper, not needed |
+| `requirements.txt` | Python packages |
+| `settings.json` | Your saved settings (local, never committed) |
 
 ## Data sources and thanks
 
-- [Reverse Beacon Network](https://www.reversebeacon.net/): spots and skimmer locations
-- [callook.info](https://callook.info) and [HamDB](https://hamdb.org): callsign locations
-- [country-files.com](https://www.country-files.com): country prefixes
-- Map tiles: Esri, OpenStreetMap contributors
-- Built with [Streamlit](https://streamlit.io/), [Folium](https://python-visualization.github.io/folium/), [pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/) and [GeographicLib](https://geographiclib.sourceforge.io/)
+[Natural Earth](https://www.naturalearthdata.com/) (public domain world outlines for the map), [Reverse Beacon Network](https://www.reversebeacon.net/), [wspr.live](https://wspr.live/) and [WSPRnet](https://wsprnet.org/), [callook.info](https://callook.info), [HamDB](https://hamdb.org), [country-files.com](https://www.country-files.com), Esri and OpenStreetMap map tiles. Built with [Streamlit](https://streamlit.io/), [Folium](https://python-visualization.github.io/folium/), [pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/) and [GeographicLib](https://geographiclib.sourceforge.io/).
 
 ## License
 
