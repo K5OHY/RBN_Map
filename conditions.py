@@ -21,9 +21,18 @@ from session_report import BAND_ORDER, REGION_ORDER, region_of
 from wspr_data import BAND_CODES, HEADERS, MAX_ROWS, WSPR_URL, WsprError
 
 # The SNR (dB, in a 2,500 Hz bandwidth) a mode needs for a solid contact. Approximate: CW and voice depend on the operator.
-MODES = {"CW (by ear)": -5.0, "SSB (voice)": 8.0, "FT8": -21.0, "FT4": -17.0, "JS8 (normal)": -24.0, "WSPR": -28.0}
+MODES = {"CW": -5.0, "SSB": 8.0, "FT8": -21.0, "FT4": -17.0, "JS8": -24.0, "WSPR": -28.0}
 CODE_TO_BAND = {code: band for band, code in BAND_CODES.items()}
 EARTH_KM = 6371.0
+
+
+def latlon_to_maidenhead(lat, lon):
+    """Six-character Maidenhead grid square (like DM81wx) for a latitude and longitude."""
+    lon, lat = (lon + 180.0) % 360.0, min(max(lat + 90.0, 0.0), 179.999999)
+    field = chr(65 + int(lon // 20)) + chr(65 + int(lat // 10))
+    square = str(int(lon % 20 // 2)) + str(int(lat % 10))
+    sub = chr(97 + int(lon % 2 * 12)) + chr(97 + int(lat % 1 * 24))
+    return field + square + sub
 
 
 def _km_between(lat1, lon1, lat2, lon2):
