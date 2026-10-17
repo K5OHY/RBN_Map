@@ -4,7 +4,29 @@ See who heard you, how strong, and from where. Map the [Reverse Beacon Network](
 
 **Use it online, nothing to install: [rbnmap.streamlit.app](https://rbnmap.streamlit.app/)**
 
-![RBN Signal Mapper Screenshot](images/Screenshot.png)
+## What it looks like
+
+**The map.** Every station that heard you, with the path to each one coloured by band and the dots coloured by signal strength. This is K5OHY's Reverse Beacon Network spots for 23 October 2025.
+
+![The map of who heard you](images/map.jpg)
+
+**Comparing two antennas.** The rest of these screens are from a real test: K5OHY's WSPR transmitter on 20m on 4 October 2026, 12 transmissions switched between a 40m loop at 20 ft (A) and a 20m dipole at 40 ft (B). The dipole won clearly.
+
+**The verdict** comes first, in plain English: who reached more receivers, who was stronger and by how much, and whether changing conditions could explain it.
+
+![The compare result](images/compare-result.jpg)
+
+**Where each antenna reached.** A world map centred on the station, coloured by which antenna was stronger toward each direction and distance.
+
+![Where each antenna reached](images/direction-map.jpg)
+
+**Receiver by receiver.** Every station that heard both antennas, A's signal against B's, with a sortable table and the relative gain by direction and by distance.
+
+![Receiver by receiver](images/receiver-by-receiver.jpg)
+
+**Band conditions.** Which bands are open now, worked out from the WSPR stations near you in the last hour.
+
+![Band conditions](images/band-conditions.jpg)
 
 ## Quick start
 
