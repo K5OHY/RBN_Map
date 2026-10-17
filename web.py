@@ -37,6 +37,7 @@ from compare_stats import (
     locate as skimmer_location,
     median_power_dbm,
     power_method,
+    t_crit,
     receiver_table,
     _farthest,
     _lead_text,
@@ -776,7 +777,7 @@ def _gain_interval(snr_a, snr_b):
     if se == 0:
         return diff, diff, diff
     df = (va + vb) ** 2 / (va ** 2 / (len(a) - 1) + vb ** 2 / (len(b) - 1))
-    t_value = 1.96 + 2.4 / max(df, 1.0) + 3.0 / max(df, 1.0) ** 2  # Student's t for 95%, close enough without SciPy
+    t_value = t_crit(df)
     return diff, diff - t_value * se, diff + t_value * se
 
 
@@ -1058,8 +1059,9 @@ def compare_report_pdf(ctx):
                     rows[:40], [0.28, 0.2, 0.13, 0.13, 0.13, 0.13])]
     if ctx["method"]:
         blocks += [("heading", "Linear average"), ("paragraph", ctx["method"]),
-                   ("note", "The default compares the same receiver in neighbouring transmissions, so it suits a short test. "
-                            "The power average suits long, time-averaged runs and needs many reports per receiver.")]
+                   ("note", "The default compares the same receiver in neighbouring transmissions, so it suits a short alternating test. "
+                            "The power average is a second measure for longer, well-balanced runs and needs many reports "
+                            "per receiver. If they disagree a lot, find out why before drawing a conclusion.")]
     if ctx["timeline"] is not None:
         blocks += [("heading", "Timeline"), ("figure", timeline_chart(*ctx["timeline"], names), 3.0)]
     meta = {"title": "Antenna comparison report", "callsign": ctx["callsign"], "subtitle": sub}
@@ -1635,7 +1637,7 @@ def _sector_detail(shared, adv, label, width_deg, names, noun):
     d = shared[sector == int(round(center / width_deg))]["delta"].to_numpy()
     text = f"**{label}: {n} {noun}{'s' if n != 1 else ''} heard both.** {_lead_text(names, float(d.mean()))}."
     if n >= 3:
-        t_value = 1.96 + 2.4 / (n - 1) + 3.0 / (n - 1) ** 2
+        t_value = t_crit(n - 1)
         half = t_value * float(d.std(ddof=1)) / np.sqrt(n)
         text += f" 95% range: {_range_text(names, float(d.mean()) - half, float(d.mean()) + half)}."
     else:
@@ -1664,7 +1666,7 @@ def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, ca
     st.markdown(
         "Reports use dB, a logarithmic scale. The **SNR average** (the standard comparison) measures the **typical SNR difference "
         "at each receiver**. The **linear average** converts SNR to power ratios, averages them for each antenna, then converts back "
-        "to dB and subtracts. Linear power is the proper way to average signal strength over time, and it gives stronger "
+        "to dB and subtracts. Linear power averages signal power over time, and it gives stronger "
         "signals more weight, so it needs many reports per receiver. The SNR average is the typical dB difference, and one "
         "strong report can't dominate it, so it holds up better with few reports. Both compare **relative signal strength "
         "at the same receivers**, not absolute antenna gain.")
@@ -1710,14 +1712,15 @@ def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, ca
     gap = abs(s_["mean"] - pm["mean"]) if not np.isnan(s_["mean"]) else np.nan
     if not np.isnan(gap):
         if gap < 1.0:
-            st.success(f"The two agree within 1 dB ({gap:.1f} dB apart), so the answer doesn't depend on how it is averaged.")
+            st.success(f"The two agree within 1 dB ({gap:.1f} dB apart), so how it is averaged isn't driving the answer. That is a consistency check, not proof.")
         else:
             st.warning(f"The two are {gap:.1f} dB apart. That usually means a few strong reports, or {noun}s with only one or "
                        "two reports each, are pulling the linear average. Try raising the minimum reports above.")
     if pm["near_floor"] >= 0.1:
         st.warning(f"{pm['near_floor']:.0%} of the reports are at or below {WSPR_FLOOR_DB} dB, the edge of what WSPR can decode. "
-                   "Weak decodes are unreliable and the weaker antenna's weakest reports may be missing, which can shrink the "
-                   "apparent difference. Try ticking the box to ignore them.")
+                   "Signals too weak to decode never appear at all, so the weaker antenna's weakest reports are missing, which can "
+                   "shrink the apparent difference. Ticking the box to ignore these reports is a check on how much they matter, "
+                   "not a correction. Compare how many receivers heard each antenna too.")
     elif pm["dropped"]:
         st.caption(f"{pm['dropped']} reports at or below {WSPR_FLOOR_DB} dB were ignored.")
 
@@ -2982,12 +2985,38 @@ def conditions_page():
 
     _conditions_body(result, power, mode, margin_db, units, k, lat, lon, callsign or "You")
 
+GITHUB_URL = "https://github.com/K5OHY/RBN_Map"
+
+
+def help_page():
+    """The README, shown in the app, with the links to the code and to Dale's site."""
+    st.title("Help and README")
+    st.markdown(f"This is the project's README, the same one that is on [GitHub]({GITHUB_URL}#readme), where the code lives "
+                "and where you can report a problem or suggest something. The relative gain, linear averaging and long "
+                "alternating blocks follow the method [Dale, N3HXZ](https://www.n3hxz.net/) publishes on his site.")
+    path = Path(__file__).parent / "README.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        st.warning(f"The README file isn't here. It is on [GitHub]({GITHUB_URL}#readme).")
+        return
+    body = [line for line in text.splitlines()
+            if not line.startswith(("# ", "![")) and "online, nothing to install" not in line]
+    st.markdown("\n".join(body))
+    shot = Path(__file__).parent / "images" / "Screenshot.png"
+    if shot.exists():
+        st.image(str(shot), caption="The My spots page")
+
+
 def main():
     st.set_page_config(layout="wide", page_title="RBN Signal Mapper", page_icon="\U0001F4E1")
     st.markdown(CSS, unsafe_allow_html=True)
     pages = [st.Page(spots_page, title="My spots", icon="\U0001F4E1", url_path="spots", default=True),
-             st.Page(conditions_page, title="Band conditions", icon="\U0001F310", url_path="conditions")]
+             st.Page(conditions_page, title="Band conditions", icon="\U0001F310", url_path="conditions"),
+             st.Page(help_page, title="Help and README", icon="\u2753", url_path="help")]
     st.navigation(pages).run()
+    st.sidebar.divider()
+    st.sidebar.caption(f"[README and code on GitHub]({GITHUB_URL}#readme) \u00b7 method by [Dale, N3HXZ](https://www.n3hxz.net/)")
 
 
 if __name__ == "__main__":
