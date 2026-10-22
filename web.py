@@ -23,6 +23,7 @@ from compare_stats import (
     station_gains,
     gain_by_window,
     DIRECTION_EDGE_DB,
+    gain_summary,
     WSPR_FLOOR_DB,
     SECTOR_NAMES,
     EQUAL_DB,
@@ -48,6 +49,10 @@ from report_pdf import build_pdf
 from world_map import MAX_KM, MIN_CELL, azimuth_map_figure
 import session_report as sr
 import conditions as cond
+import space_weather as sw
+import dashboard as dash
+import ionosphere as iono
+from contextlib import nullcontext
 from rbn_data import (
     get_band,
     load_skimmers,
@@ -572,12 +577,15 @@ def _themed_axes(fig, polar=False):
     return ax
 
 
-def sector_means(table):
-    """Average per-skimmer SNR in each of the 8 compass directions (NaN where no skimmer heard you)."""
+def sector_means(table, min_receivers=1):
+    """Average per-skimmer SNR in each of the 8 compass directions (NaN where no skimmer heard you, or fewer than
+    `min_receivers` did, so one far-off outlier can't stretch the chart)."""
     if table.empty:
         return pd.Series(np.nan, index=range(8))
     sector = ((table["bearing"] + 22.5) % 360 // 45).astype(int)
-    return table.groupby(sector)["snr"].mean().reindex(range(8))
+    grouped = table.groupby(sector)["snr"]
+    means, counts = grouped.mean().reindex(range(8)), grouped.size().reindex(range(8)).fillna(0)
+    return means.where(counts >= min_receivers)
 
 
 def direction_chart(means_a, means_b, name_a, name_b):
@@ -1053,6 +1061,14 @@ def compare_report_pdf(ctx):
                    ("figure", relative_gain_chart(every, names, units, "distance"), 3.0),
                    ("note", f"Relative gain is B's SNR minus A's SNR at the same {noun}: above zero the second antenna "
                             "gave more signal. Treat A as the reference and B as the test."),
+                   *([("heading", "Average relative gain by direction and distance"),
+                      ("table", list(ctx["gain_summary"]["direction"].columns), ctx["gain_summary"]["direction"].astype(str).values.tolist(),
+                       [0.22, 0.14, 0.24, 0.22, 0.18]),
+                      ("table", list(ctx["gain_summary"]["distance"].columns), ctx["gain_summary"]["distance"].astype(str).values.tolist(),
+                       [0.3, 0.12, 0.22, 0.2, 0.16]),
+                      ("note", f"The average of B minus A at the {noun}s in each group, {noun}s at the same place counted once, with "
+                               f"a 95% range. A group with fewer than {BIN_MIN_SHARED} {noun}s is a hint, not a result.")]
+                     if ctx.get("gain_summary") else []),
                    ("note", f"{len(every)} {noun}s heard both sides, shown farthest first (up to 40). "
                             + ctx.get("rx_note", "Each SNR is the median of that station's spots.")),
                    ("table", [noun.capitalize(), f"Distance ({units})", "A SNR", "B SNR", "Stronger", "B − A (dB)"],
@@ -1415,27 +1431,50 @@ def _blocks_test(spots, all_stamps):
     if bad_lines:
         st.warning("Couldn't read: " + "; ".join(bad_lines[:3]) + (" and more" if len(bad_lines) > 3 else "")
                    + ". Use lines like 16:40-17:12 A.")
+    pasted_used = bool(schedule)
     if not schedule:
         schedule = [(pattern[k % len(pattern)], t0 + pd.Timedelta(minutes=k * block_min),
                      t0 + pd.Timedelta(minutes=(k + 1) * block_min)) for k in range(n_blocks)]
+    chain = False if pasted_used else st.checkbox(
+        "Each block ends when the next one starts", value=True, key=f"blk_chain_{sig}",
+        help="Then you only have to edit the From times: the To of a block follows the From of the next one, and the last block "
+             "runs for the block length. Untick it to set every end time yourself, for blocks with a gap between them.")
     stamp = lambda ts: f"{ts:%H:%M}" + (f" +{(ts.normalize() - day0).days}d" if ts.normalize() > day0 else "")
-    table = pd.DataFrame({"Block": range(1, len(schedule) + 1), "Antenna": [a for a, _, _ in schedule],
-                          "From (UTC)": [stamp(lo) for _, lo, _ in schedule], "To (UTC)": [stamp(hi) for _, _, hi in schedule]})
-    st.caption("Each block is one antenna for its whole time. Change an Antenna cell if you switched differently, or clear it to "
-               "leave a block out. The From and To times can be edited too, for blocks that ran a little long or short; add +1 "
-               "after a time that falls on the next UTC day.")
+    columns = {"Block": range(1, len(schedule) + 1), "Antenna": [a for a, _, _ in schedule],
+               "From (UTC)": [stamp(lo) for _, lo, _ in schedule]}
+    if not chain:
+        columns["To (UTC)"] = [stamp(hi) for _, _, hi in schedule]
+    table = pd.DataFrame(columns)
+    if chain:
+        st.caption("Each block is one antenna until the next block starts, so you only need to edit the From times (the last block "
+                   "runs for the block length). Change an Antenna cell if you switched differently, or clear it to leave a block "
+                   "out. A time after midnight UTC is shown with +1d.")
+    else:
+        st.caption("Each block is one antenna for its whole time. Change an Antenna cell if you switched differently, or clear it to "
+                   "leave a block out. The From and To times can be edited too, for blocks that ran a little long or short; add +1 "
+                   "after a time that falls on the next UTC day.")
+    config = {"Antenna": st.column_config.SelectboxColumn("Antenna", options=["A", "B"],
+                                                          help="A, B, or empty to leave this block out."),
+              "From (UTC)": st.column_config.TextColumn("From (UTC)", help="Like 12:30, or 00:10 +1 for the next day.")}
+    if not chain:
+        config["To (UTC)"] = st.column_config.TextColumn("To (UTC)", help="Like 13:00, or 00:40 +1 for the next day.")
     edited = st.data_editor(
         table, hide_index=True, width="stretch",
-        key=f"blocks_{pattern}_{block_min}_{n_blocks}_{t0:%d%H%M}_{abs(hash(pasted)) % 10**8}", disabled=["Block"],
-        column_config={"Antenna": st.column_config.SelectboxColumn("Antenna", options=["A", "B"],
-                                                                   help="A, B, or empty to leave this block out."),
-                       "From (UTC)": st.column_config.TextColumn("From (UTC)", help="Like 12:30, or 00:10 +1 for the next day."),
-                       "To (UTC)": st.column_config.TextColumn("To (UTC)", help="Like 13:00, or 00:40 +1 for the next day.")})
+        key=f"blocks_{pattern}_{block_min}_{n_blocks}_{t0:%d%H%M}_{abs(hash(pasted)) % 10**8}_{int(chain)}", disabled=["Block"],
+        column_config=config)
     blocks, problems = [], []
-    for n, row in edited.iterrows():
+    rows_list = list(edited.iterrows())
+    los = [_cell_time(r["From (UTC)"], day0) for _, r in rows_list]
+    if chain:
+        his = []
+        for i, lo in enumerate(los):
+            later = [x for x in los[i + 1:] if x is not None and lo is not None and x > lo]
+            his.append(later[0] if later else (lo + pd.Timedelta(minutes=block_min) if lo is not None else None))
+    else:
+        his = [_cell_time(r["To (UTC)"], day0) for _, r in rows_list]
+    for (n, row), lo, hi in zip(rows_list, los, his):
         if row["Antenna"] not in ("A", "B"):
             continue
-        lo, hi = _cell_time(row["From (UTC)"], day0), _cell_time(row["To (UTC)"], day0)
         if lo is None or hi is None:
             problems.append(f"block {int(row['Block'])}")
             continue
@@ -1453,7 +1492,7 @@ def _blocks_test(spots, all_stamps):
             if lo <= t < hi:
                 labels[t] = antenna
                 break
-    with st.expander("What each block caught"):
+    with st.expander("The blocks as the test will use them (From, To and what each caught)", expanded=True):
         caught = pd.DataFrame([{"Block": n, "Antenna": a, "From (UTC)": stamp(lo), "To (UTC)": stamp(hi),
                                 "Transmissions": sum(lo <= t < hi for t in all_stamps),
                                 "Receivers": int(spots[(spots["time"] >= lo) & (spots["time"] < hi)]["spotter"].nunique())}
@@ -1527,7 +1566,7 @@ def _azimuth_map_section(points, an, names, noun, units, home, callsign, scale):
     layer_name = c1.radio("Colour the map by", list(layers), horizontal=True, key="azmap_layer")
     layer = layers[layer_name]
     show_dots = c2.checkbox("Show the receivers", value=False, key="azmap_dots") or layer == "dots"
-    choice = st.radio("How much of the world", list(views), index=2, horizontal=True, key="azmap_view")
+    choice = st.radio("How much of the world", list(views), index=1, horizontal=True, key="azmap_view")
     radius = views[choice]
     map_col, info_col = st.columns([3, 2])
     map_col.pyplot(azimuth_map_figure(home[0], home[1], points, names, callsign, units, radius, layer, show_dots, scale),
@@ -1570,7 +1609,7 @@ def _azimuth_single_section(spots, locs, home, callsign, noun, units, scale):
             c1.radio("Colour the map by", ["Average signal strength", f"{noun.capitalize()}s heard"], horizontal=True,
                      key="azmap_single_layer")]
     show_dots = c2.checkbox("Show the receivers", value=bands > 1, key="azmap_single_dots") or layer == "dots"
-    choice = st.radio("How much of the world", list(views), index=2, horizontal=True, key="azmap_single_view")
+    choice = st.radio("How much of the world", list(views), index=1, horizontal=True, key="azmap_single_view")
     radius = views[choice]
     map_col, info_col = st.columns([3, 2])
     map_col.pyplot(azimuth_map_figure(home[0], home[1], pts, {"A": "", "B": ""}, callsign, units, radius, layer, show_dots, scale),
@@ -1659,7 +1698,8 @@ def _shared_counts_note(an, noun):
     return text
 
 
-def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, callsign, paired=None):
+def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, callsign, paired=None, floor=None, min_km=0.0,
+                         default_min=1):
     """The SNR average (the standard comparison) next to the same comparison worked out by averaging power instead of dB,
     overall and by direction, and
     when to use which."""
@@ -1678,19 +1718,14 @@ def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, ca
             "4. Subtract the two. That is the relative gain of A against B.\n\n"
             "Example: reports of 0, 0, 0 and 20 dB are powers of 1, 1, 1 and 100. Their average is 25.75, which is **14.1 dB**. "
             "Averaging the dB numbers directly gives 5 dB. The single strong report counts for much more in power.")
-    c1, c2 = st.columns(2)
-    min_spots = c1.slider(f"Only {noun}s with at least this many reports on each antenna", 1, 60, 1, key="pm_min_spots",
+    min_spots = st.slider(f"Only {noun}s with at least this many reports on each antenna", 1, 60, default_min,
+                          key=f"pm_min_spots_{default_min}",
                           help=f"A long test aims for {DALE_MIN_SPOTS} or more per receiver on each antenna, and the published "
                                f"method keeps only receivers with {DALE_SITE_MIN} or more. A short test can't reach that, but "
                                "raising this drops receivers heard only once or twice, whose single reports can swing a power "
                                "average.")
-    floor = None
-    if kind == "WSPR" and c2.checkbox(f"Ignore reports at or below {WSPR_FLOOR_DB} dB", key="pm_floor",
-                                      help="WSPR can only decode down to about -28 dB. A report at that edge is unreliable, and "
-                                           "the weaker antenna's weakest reports are often missing altogether."):
-        floor = WSPR_FLOOR_DB
     s_ = an["strength"]
-    pm = power_method(spots_a, spots_b, locs, home, min_spots=min_spots, floor=floor, offset=an["power"]["offset"])
+    pm = power_method(spots_a, spots_b, locs, home, min_spots=min_spots, floor=floor, offset=an["power"]["offset"], min_km=min_km)
     if paired is not None and (paired[0]["time"].nunique() + paired[1]["time"].nunique()
                                != spots_a["time"].nunique() + spots_b["time"].nunique()):
         st.caption(f"The linear average uses every transmission ({spots_a['time'].nunique()} on A, {spots_b['time'].nunique()} on B), "
@@ -1700,7 +1735,8 @@ def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, ca
         st.info(f"Too few {noun}s heard both antennas with that many reports each. Lower the setting above.")
         return
     if min_spots < DALE_SITE_MIN:
-        strict = power_method(spots_a, spots_b, locs, home, min_spots=DALE_SITE_MIN, floor=floor, offset=an["power"]["offset"])
+        strict = power_method(spots_a, spots_b, locs, home, min_spots=DALE_SITE_MIN, floor=floor, offset=an["power"]["offset"],
+                              min_km=min_km)
         st.caption(f"With the published minimum of {DALE_SITE_MIN} reports on each antenna, "
                    + (f"{strict['n']} {noun}s qualify: linear average {_lead_text(names, strict['mean'])}."
                       if strict["n"] >= 2 else f"too few {noun}s qualify ({strict['n']}), so a long test is needed for that."))
@@ -1708,7 +1744,8 @@ def _linear_average_view(spots_a, spots_b, an, names, noun, locs, home, kind, ca
     m1.metric("SNR average: typical dB difference at the same receiver", _card_lead(s_["mean"]))
     m1.caption(f"{s_['n']} {noun}s counted once per place. 95% range: {_range_text(names, s_['lo'], s_['hi'])}.")
     m2.metric("Linear average: each receiver's average power, A against B", _card_lead(pm["mean"]))
-    m2.caption(f"{pm['n']} {noun}s counted once per place. 95% range: {_range_text(names, pm['lo'], pm['hi'])}.")
+    m2.caption(f"{pm['n']} {noun}s counted once per place. 95% range: {_range_text(names, pm['lo'], pm['hi'])}."
+               + (" Reports or receivers you left out above are left out here, but not from the SNR average." if floor is not None or min_km else ""))
     if names["A"] != "A" or names["B"] != "B":
         st.caption(f"A is {names['A']}. B is {names['B']}.")
     gap = abs(s_["mean"] - pm["mean"]) if not np.isnan(s_["mean"]) else np.nan
@@ -1806,6 +1843,21 @@ def _range_text(names, lo, hi):
 
 def _gain_text(v):
     return "-" if pd.isna(v) or abs(v) < 0.05 else f"{'A' if v > 0 else 'B'} +{abs(v):.1f}"
+
+
+def _gain_summary_view(summary, first_col, noun):
+    """A gain_summary table as text for the screen and the PDF: the group, how many receivers, the average and its range."""
+    def fmt(v):
+        return "\u2013" if pd.isna(v) else f"{v:+.1f}"
+
+    def rng(row):
+        return "\u2013" if pd.isna(row["low"]) else f"{row['low']:+.1f} to {row['high']:+.1f}"
+
+    return pd.DataFrame({
+        first_col: summary["group"], f"{noun.capitalize()}s": summary["receivers"],
+        "Average gain B \u2212 A (dB)": [fmt(v) for v in summary["mean"]],
+        "95% range": [rng(r) for _, r in summary.iterrows()],
+        "Note": ["" if n >= BIN_MIN_SHARED else ("none" if n == 0 else f"only {n}, a hint") for n in summary["receivers"]]})
 
 
 def _card_lead(v):
@@ -1984,6 +2036,21 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
     r, s_, dx = an["reach"], an["strength"], an["dx"]
     k = KM_PER_MILE if units == "mi" else 1
     means_a, means_b = sector_means(ta_all), sector_means(tb_all)
+    with st.expander("Leave out some reports or receivers (for the averages)"):
+        f1, f2 = st.columns(2)
+        floor_on = kind == "WSPR" and f1.checkbox(
+            f"Ignore reports at or below {WSPR_FLOOR_DB} dB", key="avg_floor",
+            help="WSPR can only decode down to about -28 dB. A report at that edge is unreliable, and the weaker antenna's "
+                 "weakest reports are often missing altogether.")
+        near = float(f2.number_input(f"Leave out receivers closer than ({units})", 0, 5000, 0, step=10, key=f"avg_near_{units}",
+                                     help="Close stations can hear you by ground wave, which says little about the antenna's "
+                                          "take-off angle. Leave at 0 to keep every receiver."))
+        st.caption("This changes the averages on the Receiver by receiver tab and the linear average on the Linear average tab. "
+                   "The verdict, the SNR average and the other tabs are not changed.")
+    avg_floor = WSPR_FLOOR_DB if floor_on else None
+    avg_min_km = near * (KM_PER_MILE if units == "mi" else 1.0)
+    avg_note = ", ".join(([f"reports at or below {WSPR_FLOOR_DB} dB left out"] if floor_on else [])
+                         + ([f"receivers closer than {near:g} {units} left out"] if near else []))
     tab_result, tab_where, tab_each, tab_method, tab_maps = st.tabs(
         ["\U0001F4CA Result", "\U0001F9ED Direction & distance", "\U0001F4CB Receiver by receiver",
          "\U0001F4D0 Linear average", "\U0001F5FA️ Maps"])
@@ -2080,6 +2147,12 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                               "the average-SNR chart below, there is nothing to subtract in your head.")
         if means_a.notna().any() or means_b.notna().any():
             st.subheader("Average SNR by direction")
+            min_dir = int(st.slider(f"Only directions with at least this many {noun}s", 1, 20, 1, key="snr_dir_min",
+                                    help="A direction with only one or two receivers can stretch the chart. Raise this to leave "
+                                         "those directions out of the chart (the table keeps them)."))
+            if min_dir > 1:
+                means_a, means_b = sector_means(ta_all, min_dir), sector_means(tb_all, min_dir)
+                pdf_ctx["means_a"], pdf_ctx["means_b"] = means_a, means_b
             chart_col, table_col = st.columns([1, 1])
             chart_col.pyplot(direction_chart(means_a, means_b, names["A"], names["B"]), width="stretch")
             table_col.dataframe(breakdown_table(an["direction"], names, "Direction", noun), width="stretch", hide_index=True,
@@ -2110,15 +2183,20 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                      "time and suits a long test with many reports per station; the dB middle is steadier when a station "
                      "has only a few reports.")
             min_reports = int(ctrl_min.slider(
-                f"Only {noun}s with at least this many reports on each antenna", 1, 60, 1, key="rx_min_reports",
+                f"Only {noun}s with at least this many reports on each antenna", 1, 60, DALE_MIN_SPOTS if blocks_mode else 1,
+                key=f"rx_min_reports_{'blk' if blocks_mode else 'pair'}",
                 help="Raising this drops stations with few reports. The far, weak ones go first, but each station left has a "
                      "steadier average, and the answer settling as you raise it is a sign it can be trusted."))
-            plain = method_label == "SNR (dB)" and min_reports == 1
+            plain = method_label == "SNR (dB)" and min_reports == 1 and avg_floor is None and not avg_min_km
+            if avg_note:
+                st.caption("Averages here have " + avg_note + ".")
+            fa = spots_a if avg_floor is None else spots_a[spots_a["snr"] > avg_floor]
+            fb = spots_b if avg_floor is None else spots_b[spots_b["snr"] > avg_floor]
             if plain:
                 every, scatter_src = an["shared_all"], an["shared"]
             else:
                 every = station_gains(spots_a, spots_b, locs, home, "linear" if method_label == "Linear power" else "snr",
-                                      min_reports, an["power"]["offset"])
+                                      min_reports, an["power"]["offset"], avg_floor, avg_min_km)
                 scatter_src = every
             if every.empty:
                 st.info(f"No {noun} has {min_reports} or more reports on both antennas. Lower the number above.")
@@ -2156,8 +2234,35 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                 gain_dir.pyplot(relative_gain_chart(every, names, units, "direction"), width="stretch")
                 gain_dist.pyplot(relative_gain_chart(every, names, units, "distance"), width="stretch")
 
+                st.markdown("##### Average relative gain by direction and distance")
+                c_groups, c_short, c_medium = st.columns([2, 1, 1])
+                groups = c_groups.radio("Group directions as", ["Octants (8)", "Quadrants (4)"], horizontal=True, key="gs_groups",
+                                        help="Each direction is centred on its compass point, like the direction charts: N covers "
+                                             "337\u00b0 to 22\u00b0 for octants, and 315\u00b0 to 45\u00b0 for quadrants.")
+                kk_gs = KM_PER_MILE if units == "mi" else 1.0
+                short_max = float(c_short.number_input(f"Short ends at ({units})", min_value=50, max_value=20000,
+                                                       value=1000 if units == "mi" else 1500, step=100, key=f"gs_short_{units}"))
+                medium_max = float(c_medium.number_input(f"Medium ends at ({units})", min_value=100, max_value=20000,
+                                                         value=2500 if units == "mi" else 4000, step=100, key=f"gs_med_{units}"))
+                if medium_max <= short_max:
+                    st.warning("Medium has to end beyond where Short ends. Using the two numbers in order.")
+                    short_max, medium_max = sorted((short_max, medium_max))
+                dir_sum = gain_summary(every, "octant" if groups.startswith("Octants") else "quadrant")
+                dist_labels = [f"Short: under {short_max:,.0f} {units}", f"Medium: {short_max:,.0f} to {medium_max:,.0f} {units}",
+                               f"Long: over {medium_max:,.0f} {units}"]
+                dist_sum = gain_summary(every, "distance", [short_max * kk_gs, medium_max * kk_gs], dist_labels)
+                gs_dir = _gain_summary_view(dir_sum, "Direction", noun)
+                gs_dist = _gain_summary_view(dist_sum, "Distance", noun)
+                pdf_ctx["gain_summary"] = {"direction": gs_dir, "distance": gs_dist}
+                t_dir, t_dist = st.columns(2)
+                t_dir.dataframe(gs_dir, width="stretch", hide_index=True, height=35 * (len(gs_dir) + 1) + 3)
+                t_dist.dataframe(gs_dist, width="stretch", hide_index=True, height=35 * (len(gs_dist) + 1) + 3)
+                st.caption(f"The average of B \u2212 A at the {noun}s in each group, with {noun}s at the same place counted once and "
+                           f"a 95% range. Above zero, B was stronger there. A group with fewer than {BIN_MIN_SHARED} {noun}s is a "
+                           f"hint, not a result. It uses the same averaging ({method_label}) and minimum reports as the charts above.")
+
                 st.subheader(f"One {noun} over time")
-                reports_a, reports_b = spots_a.groupby("spotter").size(), spots_b.groupby("spotter").size()
+                reports_a, reports_b = fa.groupby("spotter").size(), fb.groupby("spotter").size()
                 kk = KM_PER_MILE if units == "mi" else 1
                 sort_by = st.radio("Sort the list by", ["A\u2013Z", "Distance", "Direction", "Most reports"], horizontal=True,
                                    key="rx_sort", help="You can also click the box and type part of a callsign to find it.")
@@ -2172,10 +2277,10 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                                            f"{COMPASS_16[int(((every.at[r, 'bearing_a'] + 11.25) % 360) // 22.5)]} \u00b7 "
                                            f"{reports_a.get(r, 0)} on A, {reports_b.get(r, 0)} on B"))
                 offset = an["power"]["offset"]
-                st.pyplot(receiver_time_chart(spots_a, spots_b, pick, names, offset, linear=method_label == "Linear power"),
+                st.pyplot(receiver_time_chart(fa, fb, pick, names, offset, linear=method_label == "Linear power"),
                           width="stretch")
-                one_a = spots_a[spots_a["spotter"] == pick]["snr"].to_numpy(float)
-                one_b = spots_b[spots_b["spotter"] == pick]["snr"].to_numpy(float) + offset
+                one_a = fa[fa["spotter"] == pick]["snr"].to_numpy(float)
+                one_b = fb[fb["spotter"] == pick]["snr"].to_numpy(float) + offset
                 m_a, m_b, m_gain = st.columns(3)
                 for col, label, values in ((m_a, names["A"], one_a), (m_b, names["B"], one_b)):
                     col.metric(label, f"{_linear_db(values):.1f} dB")
@@ -2198,8 +2303,9 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                     multiples = [m for m in (2, 4, 6, 8) if m * block_min <= (t_end - t_start).total_seconds() / 60]
                     c_len, c_min = st.columns(2)
                     mult = c_len.selectbox("Window length", multiples or [2], index=min(1, max(len(multiples) - 1, 0)),
-                                           format_func=lambda m: (f"{m * block_min / 60:g} hour{'s' if m * block_min != 60 else ''}"
-                                                                  if m * block_min >= 60 else f"{m * block_min} minutes"),
+                                           format_func=lambda m: (f"{m * block_min // 60} hour{'s' if m * block_min != 60 else ''}"
+                                                                  if m * block_min >= 60 and m * block_min % 60 == 0
+                                                                  else f"{m * block_min:g} minutes"),
                                            key=f"rx_win_len_{block_min}",
                                            help="A window should hold whole A and B blocks so both antennas get equal time. "
                                                 "Two hours (four 30-minute blocks) balances either block order.")
@@ -2213,7 +2319,7 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
                         cursor += step
                     over_time = gain_by_window(spots_a, spots_b, locs, home, windows,
                                                "linear" if method_label == "Linear power" else "snr", win_min, offset,
-                                               receiver=pick)
+                                               receiver=pick, floor=avg_floor, min_km=avg_min_km)
                     if over_time["n"].sum() == 0:
                         st.caption("No window has enough reports at that minimum. Lower it.")
                     else:
@@ -2235,7 +2341,8 @@ def compare_view(spots, locs, home, label, callsign, file_date, tiles, show_all,
             st.info(f"No {noun} heard both sides, so there is nothing to compare receiver by receiver.")
 
     with tab_method:
-        _linear_average_view(map_a, map_b, an, names, noun, locs, home, kind, callsign, paired=(spots_a, spots_b))
+        _linear_average_view(map_a, map_b, an, names, noun, locs, home, kind, callsign, paired=(spots_a, spots_b),
+                             floor=avg_floor, min_km=avg_min_km, default_min=DALE_MIN_SPOTS if sep.get("blocks") else 1)
 
     with tab_maps:
         st.caption("Both maps use the same view, the same SNR scale and the same dot sizes.")
@@ -2723,7 +2830,6 @@ _LOCATE = st.components.v2.component(
 
 _STATUS = {"Open": "\U0001F7E2 Open", "Marginal": "\U0001F7E1 Marginal", "Quiet": "\u26AA Quiet"}
 _TREND = {"opening": "\u2197 opening", "fading": "\u2198 fading", "steady": "\u2192 steady", "new": "\u2197 just started", "unclear": "– too few to tell"}
-_REGION_NAME = {"Mexico, Caribbean & Central America": "Mexico / Caribbean"}
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -2740,108 +2846,110 @@ def _station_spots(call, end_iso, minutes):
     return cond.fetch_station(call, end - timedelta(minutes=minutes), end)
 
 
-def _color_cells(frame, rule):
-    return frame.style.map(lambda v: "" if pd.isna(v) else rule(v))
+def _dx_badge(result, units, k):
+    """A short label and tone for the top card: how many receivers outside North America heard the stations near you."""
+    n = result["receivers"][result["receivers"]["region"].isin(cond.DX_REGIONS)]["rx"].nunique()
+    if n < 5:
+        return ("Thin DX evidence", "ta", f"Only {n} receiver{'s' if n != 1 else ''} outside the US and Canada heard these WSPR "
+                "signals, so the DX figures rest on very little data. A wider area (up to about 900 miles) or a longer look-back "
+                "can add some.")
+    return ("DX evidence good", "tg", f"{n} receivers outside the US and Canada heard these WSPR signals.")
 
 
-def _conditions_body(result, power, mode, margin_db, units, k, lat, lon, who):
-    """Everything under the headline numbers: the at-a-glance box, the band table, the regions, the farthest receivers and the map."""
-    dx_receivers = result["receivers"][result["receivers"]["region"].isin(cond.DX_REGIONS)]["rx"].nunique()
-    if dx_receivers < 5:
-        st.warning(f"Only {dx_receivers} receiver{'s' if dx_receivers != 1 else ''} outside the US and Canada heard these WSPR "
-                   "signals, so the DX figures rest on very little data. A wider area (up to about 900 miles) or a longer look-back "
-                   "can add some.")
-    with st.container(border=True):
-        st.markdown("**At a glance**")
-        for line in cond.headline(result, power, mode, margin_db, units):
-            st.markdown(line)
+def _conditions_body(result, power, mode, margin_db, units, k, lat, lon, who, window=60, area=""):
+    """The dashboard: the summary, a tile for each band, the sun and MUF, the regions, the map and the highlights,
+    with the detailed tables in tabs underneath."""
+    lines = cond.headline(result, power, mode, margin_db, units, window)
+    bands, dx = result["bands"], result["dx"]
+    data, est = _space_weather(), iono.estimate(lat, lon, _ionosondes())
+    badge, badge_tone, badge_help = _dx_badge(result, units, k)
+    setup = f"{power:g} W {mode} from {cond.latlon_to_maidenhead(lat, lon)}"
+    if len(dx):
+        far = dx.iloc[0]
+        setup += f" \u00b7 farthest: {far['rx']}, {far['km'] / k:,.0f} {units} on {far['band']}"
+    st.html(dash.CSS)
+    st.html(dash.top_html(setup, f"{result['n_spots']:,} WSPR spots from {result['n_tx']} stations{area}, last {window} minutes",
+                          badge, badge_tone, badge_help))
+    st.html(dash.tiles_html(bands, result["series"]))
+    st.html(dash.strip_html(sw.readings(data), est))
 
-    st.subheader("Band by band")
-    bands = result["bands"]
-    summary = pd.DataFrame({
-        "Status": [_STATUS[s] for s in bands["Status"]], "Trend": [_TREND[t] for t in bands["Trend"]],
-        "Receivers hearing it": bands["Receivers"], "Good": bands["Good"], "Marginal": bands["Marginal"],
-        f"Farthest good ({units})": [f"{km / k:,.0f}" if pd.notna(km) else "" for km in bands["Farthest good (km)"]],
-        "Farthest receiver": [f"{c} ({r})" if c else "" for c, r in zip(bands["Farthest good receiver"],
-                                                                         bands["Farthest good region"])],
-    }, index=bands.index)
-    st.dataframe(summary, width="stretch")
-    st.caption("Good means the middle of that receiver's reports, restated for your power, beats the mode's threshold by your "
-               "safety margin. Marginal is above the threshold but by less than the margin. Trend compares the second half "
-               "of the look-back with the first.")
-
-    st.subheader("Where you would be heard")
-    view = st.radio("Show", ["Chance a receiver hears you", "Margin at your power", "Power you would need"], horizontal=True,
-                    key="cond_view")
-    if view == "Chance a receiver hears you":
-        odds = result["chance"].rename(columns=_REGION_NAME)
-        counts = result["regions_n"].rename(columns=_REGION_NAME)
-        thin = counts < cond.THIN
-        text = pd.DataFrame({col: [("" if pd.isna(p) else f"~{p:.0%} ({int(n)})" if n < cond.THIN else f"{p:.0%} ({int(n)})")
-                                   for p, n in zip(odds[col], counts[col])] for col in odds.columns}, index=odds.index)
-        colour = odds.copy().astype(object)
-        for col in odds.columns:  # a region with only one or two receivers is a hint, so it is greyed, not green or red
-            colour[col] = ["" if pd.isna(p) else "background-color:rgba(138,143,152,.25)" if t
-                           else "background-color:rgba(46,160,67,.35)" if p >= 0.7
-                           else "background-color:rgba(210,153,34,.35)" if p >= 0.4 else "background-color:rgba(248,81,73,.28)"
-                           for p, t in zip(odds[col], thin[col])]
-        st.dataframe(text.style.apply(lambda _: colour, axis=None), width="stretch")
-        st.caption("The share of receivers in each region that would hear you, allowing for the usual error in a prediction "
-                   f"(about {cond.SIGMA_DB:g} dB), with the number of receivers behind it in brackets. Green is 70% or more, "
-                   f"yellow 40 to 70%, red below. A grey figure with a ~ rests on only 1 or 2 receivers: in a week of checks, regions "
-                   "like that were really spotted only about 4 times in 10, so it is a hint, not a result. These are estimates, not "
-                   "measured success rates: they are good for comparing bands and directions.")
-    elif view == "Margin at your power":
-        table = result["regions"].rename(columns=_REGION_NAME).round(0)
-        shown = _color_cells(table, lambda v: ("background-color:rgba(46,160,67,.35)" if v >= margin_db
-                                               else "background-color:rgba(210,153,34,.35)" if v >= 0
-                                               else "background-color:rgba(248,81,73,.28)")).format("{:+.0f}", na_rep="")
-        st.dataframe(shown, width="stretch")
-        st.caption(f"dB above the {mode} threshold at a typical receiver in each region (the 75th percentile, so not the best "
-                   f"one). Green clears your {margin_db} dB margin, yellow is above the threshold, red is below. Blank means no "
-                   "receiver there heard the nearby stations.")
-    else:
-        table = result["power_needed"].rename(columns=_REGION_NAME)
-
-        def power_cell(w):
-            return ("background-color:rgba(46,160,67,.35)" if w <= power else "background-color:rgba(210,153,34,.35)"
-                    if w <= power * 4 else "background-color:rgba(248,81,73,.28)")
-
-        def power_text(w):
-            return "" if pd.isna(w) else "<0.1" if w < 0.1 else ">1500" if w > 1500 else f"{w:.1f}" if w < 10 else f"{w:.0f}"
-        st.dataframe(_color_cells(table, power_cell).format(power_text), width="stretch")
-        st.caption(f"Watts of {mode} a typical receiver in each region would need to hear you with your {margin_db} dB margin. "
-                   f"Green is at or below your {power:g} W, yellow is up to four times that, red is more.")
-
-    st.subheader("Farthest receivers that would hear you")
-    dx = result["dx"]
-    if dx.empty:
-        st.caption("None at this power and mode right now.")
-    else:
-        st.dataframe(pd.DataFrame({
-            "Band": dx["band"], "Receiver": dx["rx"], "Region": dx["region"], f"Distance ({units})": (dx["km"] / k).round(0).astype(int),
-            "Margin (dB)": dx["margin"].round(0).astype(int)}), width="stretch", hide_index=True)
+    left, right = st.columns([1.5, 1])
+    with left.container(border=True):
+        st.html(dash.grid_html(result["chance"], result["regions_n"]))
+    with right.container(border=True):
+        st.html(dash.highlights_html(cond.short_highlights(result, power, mode, margin_db, units, window)))
 
     good = result["receivers"][result["receivers"]["margin"] >= 0]
-    if len(good):
-        st.subheader("Map of receivers that would hear you")
-        points = pd.DataFrame({"km": good["km"].to_numpy(), "bearing": good["bearing"].to_numpy(), "group": "single",
-                               "gap": float("nan"), "snr_a": good["margin"].to_numpy(), "snr_b": float("nan"),
-                               "color": [BAND_COLORS.get(b, "#8a8f98") for b in good["band"]]})
-        views = _views(units)
-        view_choice = st.radio("How much of the world", list(views), index=2, horizontal=True, key=f"cond_map_view_{units}")
-        view_km = views[view_choice]
-        map_col, key_col = st.columns([3, 1])
-        map_col.pyplot(azimuth_map_figure(lat, lon, points, {"A": "", "B": ""}, who, units, view_km, "dots", True,
-                                          (0, 20)), width="stretch")
-        beyond = int((points["km"] > view_km).sum())
-        if beyond:
-            map_col.caption(f"{beyond} receiver{'s' if beyond != 1 else ''} beyond this view.")
-        key_col.markdown("**Band colours**\n\n" + "\n\n".join(
-            f"<span style='color:{BAND_COLORS.get(b, '#8a8f98')}'>\u25CF</span> {b}" for b in sorted(
-                set(good["band"]), key=lambda b: list(BAND_COLORS).index(b) if b in BAND_COLORS else 99)), unsafe_allow_html=True)
+    with st.container(border=True):
+        st.html('<div class="cd"><p class="cd-h">Map of receivers that would hear you</p>'
+                f'<p class="cd-sub">{len(good)} receiver and band pairs with a good signal, with the number for each band beside it. Pick a band or two to show only those, or none to show all.</p></div>')
+        if len(good):
+            band_order = [b for b in dash.MAP_COLORS if b in set(good["band"])] + sorted(set(good["band"]) - set(dash.MAP_COLORS))
+            per_band = good.groupby("band").size()
+            st.html(dash.band_buttons_css("cond_map_bands", band_order))
+            pick_col, view_col = st.columns([3, 1])
+            picked = pick_col.pills("Bands", band_order, selection_mode="multi", key="cond_map_bands",
+                                    format_func=lambda b: f"{b}  {per_band[b]}", label_visibility="collapsed") or band_order
+            views = _views(units)
+            view_choice = view_col.selectbox("How much of the world", list(views), index=1, key=f"cond_map_view_{units}",
+                                             label_visibility="collapsed")
+            night = st.checkbox("Day and night line", key="cond_map_night",
+                                help="Shades the night side and draws the line between day and night (the gray line), "
+                                     "which is where the low bands tend to do best.")
+            shown = good[good["band"].isin(picked)]
+            points = pd.DataFrame({"km": shown["km"].to_numpy(), "bearing": shown["bearing"].to_numpy(), "group": "single",
+                                   "gap": float("nan"), "snr_a": shown["margin"].to_numpy(), "snr_b": float("nan"),
+                                   "color": [dash.MAP_COLORS.get(b, "#8a8f98") for b in shown["band"]]})
+            _, map_col, _ = st.columns([1, 4, 1])
+            map_col.pyplot(azimuth_map_figure(lat, lon, points, {"A": "", "B": ""}, who, units, views[view_choice], "dots", True,
+                                              (0, 20), when=datetime.now(timezone.utc).replace(tzinfo=None) if night else None),
+                           width="stretch")
+            beyond = int((points["km"] > views[view_choice]).sum())
+            if beyond:
+                map_col.caption(f"{beyond} receiver{'s' if beyond != 1 else ''} beyond this view.")
+        else:
+            st.caption("No receiver would hear you at this power and mode right now.")
+    st.caption("Estimated from WSPR reports, not measured: good for comparing bands and directions, but the percentages run high "
+               "for being spotted by a skimmer. The tabs below have the numbers behind this and how far to trust them.")
 
-    with st.expander("How this works, and how far to trust it"):
+    t_band, t_margin, t_sun, t_far, t_how = st.tabs(["Band by band", "Margin and power needed", "Sun and MUF", "Farthest receivers",
+                                                      "How this works"])
+    with t_band:
+        bands = result["bands"]
+        summary = pd.DataFrame({
+            "Status": [_STATUS[s] for s in bands["Status"]], "Trend": [_TREND[t] for t in bands["Trend"]],
+            "Receivers hearing it": bands["Receivers"], "Good": bands["Good"], "Marginal": bands["Marginal"],
+            f"Farthest good ({units})": [f"{km / k:,.0f}" if pd.notna(km) else "" for km in bands["Farthest good (km)"]],
+            "Farthest receiver": [f"{c} ({r})" if c else "" for c, r in zip(bands["Farthest good receiver"],
+                                                                             bands["Farthest good region"])],
+        }, index=bands.index)
+        st.dataframe(summary, width="stretch")
+        st.caption("Good means the middle of that receiver's reports, restated for your power, beats the mode's threshold by your "
+                   "safety margin. Marginal is above the threshold but by less than the margin. Trend compares the second half "
+                   "of the look-back with the first.")
+
+    with t_margin:
+        st.html(dash.detail_grid_html(result["regions"], result["power_needed"], result["regions_n"], margin_db))
+        st.caption(f"The top figure is dB above the {mode} threshold at a typical receiver in each region (the 75th percentile, so "
+                   f"not the best one). Under it is the power that receiver would need to hear you with your {margin_db} dB margin; "
+                   f"green means your {power:g} W is enough. A grey cell has only 1 or 2 receivers, so it has no figure: see "
+                   "How this works.")
+
+    with t_sun:
+        if sw.interpret(data):
+            _space_weather_card(boxed=False)
+        if est:
+            _muf_card(lat, lon, boxed=False)
+    with t_far:
+        dx = result["dx"]
+        if dx.empty:
+            st.caption("None at this power and mode right now.")
+        else:
+            st.dataframe(pd.DataFrame({
+                "Band": dx["band"], "Receiver": dx["rx"], "Region": dx["region"], f"Distance ({units})": (dx["km"] / k).round(0).astype(int),
+                "Margin (dB)": dx["margin"].round(0).astype(int)}), width="stretch", hide_index=True)
+
+    with t_how:
         st.markdown(
             "Every WSPR report says: this station, at this power, was heard at this SNR. SNR moves dB for dB with power, so the "
             "report can be restated for your power: run 10 dB more and you would be 10 dB stronger there. Each mode needs a "
@@ -2851,6 +2959,14 @@ def _conditions_body(result, power, mode, margin_db, units, k, lat, lon, who):
             "that check, so DX is the least tested part. The chance figures allow for that error.\n"
             "- **It only counts receivers that heard the nearby WSPR stations.** With more power than they used, you would be "
             "heard in more places than shown.\n"
+            "- **A region with only 1 or 2 receivers is a hint, not a result, and it flatters you.** Only receivers that heard "
+            "something are counted, so when just one receiver in a region heard the stations near you, it is the lucky exception, "
+            "and the others there heard nothing. Its figures look easy, but a contact there is usually hard. In a week of checks, "
+            "such regions were really spotted only about 4 times in 10, so they show only a receiver count.\n"
+            "- **The percentages are estimates, not measured success rates.** They are good for comparing bands and directions, "
+            "but run high for being spotted by a skimmer. In a week of one station's CW activations, of the skimmers the figures "
+            "said could hear him, about 1 in 10 spotted him below the CW spot threshold, 4 in 10 at a margin of 0 to 5 dB, 5 in 10 at "
+            "5 to 10 dB and about 7 in 10 at 15 dB or more.\n"
             "- **WSPR receivers are often quiet sites.** A station you hope to work may have more noise, so keep a margin.\n"
             "- **The thresholds are approximate**, and CW and voice depend on the operator's ear and the receiver.\n"
             "- **It assumes your antenna matches theirs** unless you enter a difference.\n"
@@ -2858,11 +2974,80 @@ def _conditions_body(result, power, mode, margin_db, units, k, lat, lon, who):
 
 
 
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _space_weather():
+    """NOAA's current space weather, cached for 15 minutes."""
+    return sw.fetch()
+
+
+def _space_weather_card(boxed=True):
+    """The sun and the magnetic field right now, as a few numbers and a short plain reading. Shows nothing if NOAA can't be reached."""
+    data = _space_weather()
+    lines = sw.interpret(data)
+    if not lines:
+        return
+    items = [(label, value, help_) for label, value, help_ in (
+        ("Solar flux", None if data["flux"] is None else f"{data['flux']:.0f}",
+         "The 10.7 cm radio flux, measured daily at noon in Penticton. Higher means better HF: about 70 is poor, 120 good, 150 or more very good."),
+        ("Sunspots", None if data["ssn"] is None else f"{data['ssn']:.0f}",
+         "The sunspot number of the latest complete day. More spots usually means a more active sun and better HF."),
+        ("Kp index", None if data["kp"] is None else f"{data['kp']:.1f}",
+         "How disturbed Earth's magnetic field is, 0 to 9, updated every 3 hours. Under 3 is quiet, 5 or more is a storm."),
+        ("A index", None if data["a_index"] is None else f"{data['a_index']:.0f}",
+         "The day's average disturbance of the magnetic field at middle latitudes (yesterday's). Under 8 is quiet, 30 or more is a storm."),
+        ("X-ray", sw.xray_class(data["xray"]),
+         "The flare level from the GOES satellite. A and B are quiet, C is minor, M can cause a brief radio fade-out, X a strong one."),
+        ("Wind (km/s)", None if data["wind"] is None else f"{data['wind']:.0f}",
+         "The speed of the wind reaching Earth. Around 400 is calm, 500 or more is elevated, 600 or more is fast."),
+        ("Bz (nT)", None if data["bz"] is None else f"{data['bz']:+.0f}",
+         "The north-south direction of the solar wind's magnetic field. Negative (south) lets the wind stir Earth's field."))
+        if value is not None]
+    with st.container(border=True) if boxed else nullcontext():
+        if boxed:
+            st.markdown("**\u2600\ufe0f Space weather right now**")
+        for start in range(0, len(items), 4):
+            row = items[start:start + 4]
+            for col, (label, value, help_) in zip(st.columns(4)[:len(row)], row):
+                col.metric(label, value, help=help_)
+        st.markdown("\n".join(f"- {line}" for line in lines))
+        flux_t, kp_t = sw.when_text(data["times"].get("flux"), "%d %b"), sw.when_text(data["times"].get("kp"), "%H:%M")
+        st.caption("From NOAA's Space Weather Prediction Center. Solar flux is the daily noon reading"
+                   + (f" (latest {flux_t})" if flux_t else "") + ", Kp is for the 3-hour period"
+                   + (f" starting {kp_t} UTC" if kp_t else "") + ", and the rest update every few minutes.")
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _ionosondes():
+    """The working ionosondes with a fresh reading, cached for 15 minutes."""
+    return iono.fetch()
+
+
+def _muf_card(lat, lon, boxed=True):
+    """The MUF and foF2 near the user, estimated from the nearest working ionosondes. Shows nothing if none is close enough."""
+    est = iono.estimate(lat, lon, _ionosondes())
+    if not est:
+        return
+    with st.container(border=True) if boxed else nullcontext():
+        st.markdown("**\U0001F4E1 MUF near you** (MHz)" if boxed else "MHz:")
+        shown = [(f"{d:,} km", f"{est['muf'][d]:.0f}", f"The highest frequency expected to work over a {d:,} km path. "
+                  "Shorter paths cannot use as high a frequency, because the signal meets the ionosphere at a steeper angle.")
+                 for d in (3000, 2000, 1000, 500)]
+        shown.append(("NVIS (foF2)", f"{est['fof2']:.1f}", "The critical frequency: the highest frequency that still bounces straight "
+                      "back for local contacts. Above it, signals pass up and out and skip over nearby stations."))
+        for col, (label, value, help_) in zip(st.columns(len(shown)), shown):
+            col.metric(label, value, help=help_)
+        st.markdown("\n".join(f"- {line}" for line in iono.interpret(est)))
+        st.caption("Measured by ionosondes (ionospheric radars) collected by GIRO and republished by Andrew KC2G at prop.kc2g.com. "
+                   "Only a few dozen report at any time, so this is an estimate for your location, not a measurement.")
+
+
 def conditions_page():
     """Which bands are open and where a signal like yours would be heard, from the WSPR stations near you."""
-    st.title("\U0001F310 Band conditions now")
+    st.header("\U0001F310 Band conditions now")
     st.markdown('<p class="subtitle">Which bands are open and where you would be heard, worked out from the WSPR stations near '
-                'you in the last hour, restated for your power and mode.</p>', unsafe_allow_html=True)
+                'you in the last half hour, restated for your power and mode.</p>', unsafe_allow_html=True)
     skimmers, _ = skimmer_data()
     saved = st.session_state.get("cfg") or load_settings()
     with st.sidebar:
@@ -2887,7 +3072,8 @@ def conditions_page():
         source = st.radio("Learn from", ["Stations near me", "One transmitter"], horizontal=True, key="cond_source",
                           help="Stations near me uses every WSPR transmitter inside the area below. One transmitter uses just "
                                "your own WSPR transmitter, or a friend's, and treats it as you: its spots, at its own power, "
-                               "show where a station at that spot is being heard. It is the closest match to your own antenna.")
+                               "show where a station at that spot is being heard. It is the closest match to your own antenna. A single transmitter "
+                               "sends each band only now and then, so a look-back of an hour or two gives it more to go on.")
         ref_call = ""
         if source == "One transmitter":
             ref_call = st.text_input("Transmitter callsign", value=st.session_state.get("callsign_in", saved.get("callsign", "")),
@@ -2905,7 +3091,7 @@ def conditions_page():
                                             help="WSPR stations inside this distance count as being near you. A wider area "
                                                  "gives more data where few stations transmit."))
         st.header("Your signal")
-        power = st.number_input("Power (watts)", 0.1, 1500.0, 5.0, step=1.0, key="cond_power")
+        power = st.number_input("Power (watts)", 0.1, 1500.0, 100.0, step=1.0, key="cond_power")
         mode = st.selectbox("Mode", list(cond.MODES), key="cond_mode",
                             help="Each mode needs a minimum signal-to-noise ratio. These are approximate, in a 2,500 Hz "
                                  + "bandwidth: " + ", ".join(f"{m} {v:+g} dB" for m, v in cond.MODES.items()) + ".")
@@ -2915,7 +3101,7 @@ def conditions_page():
                                           "test on the My spots page can tell you the number.")
         margin_db = st.slider("Safety margin (dB)", 0, 10, 3, key="cond_margin",
                               help="Signals fade, so a path counts as good only when it beats the mode's threshold by this much.")
-        window = st.radio("Look back", [30, 60, 120], index=1, horizontal=True, key="cond_window",
+        window = st.radio("Look back", [30, 60, 120], index=0, horizontal=True, key="cond_window",
                           format_func=lambda m: f"{m} min" if m < 60 else f"{m // 60} h")
         if st.button("Refresh now", width="stretch", key="cond_refresh"):
             _nearby_spots.clear()
@@ -2944,9 +3130,8 @@ def conditions_page():
         if result["bands"].empty:
             st.warning("No receivers heard that transmitter in that time.")
             return
-        st.markdown(f"**{ref_call}'s WSPR spots**, **{result['n_spots']:,}** in the last {window} minutes, restated for "
-                    f"**{power:g} W {mode}**. Its own antenna and location stand in for yours.")
-        _conditions_body(result, power, mode, margin_db, units, k, lat, lon, ref_call)
+        st.caption(f"{ref_call}'s own antenna and location stand in for yours.")
+        _conditions_body(result, power, mode, margin_db, units, k, lat, lon, ref_call, window)
         return
     try:
         if where == "My location":
@@ -2990,10 +3175,9 @@ def conditions_page():
     if result["bands"].empty:
         st.warning("No receivers heard the stations near you in that time.")
         return
-    st.markdown(f"**{result['n_tx']} WSPR stations** within {radius / k:,.0f} {units}, **{result['n_spots']:,} spots** in the last "
-                f"{window} minutes, restated for **{power:g} W {mode}**.")
 
-    _conditions_body(result, power, mode, margin_db, units, k, lat, lon, callsign or "You")
+    _conditions_body(result, power, mode, margin_db, units, k, lat, lon, callsign or "You", window,
+                     area=f" within {radius / k:,.0f} {units}")
 
 GITHUB_URL = "https://github.com/K5OHY/RBN_Map"
 

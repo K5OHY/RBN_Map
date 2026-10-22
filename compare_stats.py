@@ -127,13 +127,16 @@ DALE_MIN_SPOTS = 20       # spots per antenna that a long time-averaged test aim
 DALE_SITE_MIN = 40        # the minimum Dale's published method keeps per antenna, per receiver
 
 
-def station_gains(spots_a, spots_b, locs, home, method="snr", min_spots=1, offset=0.0):
+def station_gains(spots_a, spots_b, locs, home, method="snr", min_spots=1, offset=0.0, floor=None, min_km=0.0):
     """One row per located receiver that heard both sides: each side's average SNR there, how many reports that rests on, and
     where the receiver is. `method` is 'snr' (the middle of the dB reports) or 'linear' (the reports turned into power,
     averaged, and turned back into dB). `min_spots` keeps receivers with at least that many reports on EACH side, and
     `offset` (dB) is added to B first to correct a transmit-power difference. gap = A minus B, so a station's relative
-    gain (B minus A) is minus the gap."""
+    gain (B minus A) is minus the gap. `floor` drops reports at or below that SNR (WSPR's decoding edge) and `min_km` leaves
+    out receivers closer than that (so a station reached by ground wave does not count)."""
     def per_receiver(spots, shift):
+        if floor is not None:
+            spots = spots[spots["snr"] > floor]
         snr = spots["snr"] + shift
         g = spots.assign(_snr=snr, _power=10 ** (snr / 10)).groupby("spotter")
         avg = 10 * np.log10(g["_power"].mean()) if method == "linear" else g["_snr"].median()
@@ -149,6 +152,7 @@ def station_gains(spots_a, spots_b, locs, home, method="snr", min_spots=1, offse
     t = t[t.index.isin(geo)].copy()
     t["km_a"] = [geo[w][0] for w in t.index]
     t["bearing_a"] = [geo[w][1] for w in t.index]
+    t = t[t["km_a"] >= min_km]
     t[["snr_a", "snr_b"]] = t[["snr_a", "snr_b"]].round(1)  # a tenth of a dB is plenty, and keeps the table readable
     t["gap"] = (t["snr_a"] - t["snr_b"]).round(1)
     t["delta"] = t["gap"]
@@ -170,7 +174,8 @@ def mean_interval(values):
     return mean, mean - half, mean + half
 
 
-def gain_by_window(spots_a, spots_b, locs, home, windows, method="linear", min_spots=3, offset=0.0, receiver=None):
+def gain_by_window(spots_a, spots_b, locs, home, windows, method="linear", min_spots=3, offset=0.0, receiver=None,
+                   floor=None, min_km=0.0):
     """Relative gain (B minus A) in each time window: the average over every receiver that heard both sides in that window,
     with a 95% range, and the number of receivers. `windows` is a list of (start, end) times. With `receiver` set, the gain at
     that one receiver is returned as well. Returns a DataFrame, one row per window."""
@@ -181,7 +186,7 @@ def gain_by_window(spots_a, spots_b, locs, home, windows, method="linear", min_s
         row = {"start": start, "end": end, "n": 0, "mean": math.nan, "lo": math.nan, "hi": math.nan, "one": math.nan,
                "one_n": (0, 0)}
         if len(a) and len(b):
-            table = station_gains(a, b, locs, home, method, min_spots, offset)
+            table = station_gains(a, b, locs, home, method, min_spots, offset, floor, min_km)
             if len(table):
                 row["n"] = len(table)
                 row["mean"], row["lo"], row["hi"] = mean_interval(-table["gap"])
@@ -195,13 +200,14 @@ def gain_by_window(spots_a, spots_b, locs, home, windows, method="linear", min_s
     return pd.DataFrame(rows)
 
 
-def power_method(spots_a, spots_b, locs, home, min_spots=1, floor=None, offset=0.0):
+def power_method(spots_a, spots_b, locs, home, min_spots=1, floor=None, offset=0.0, min_km=0.0):
     """The same comparison done by averaging POWER instead of dB, for a cross-check against the default.
 
     For each receiver: every report is turned from dB into power (10 ** (dB / 10)), each antenna's reports are averaged,
     and the ratio is turned back into dB. That is that receiver's relative gain (A minus B). The receivers' gains are then
     averaged (each place counted once) with a 95 % range. `min_spots` keeps only receivers with at least that many
-    reports on EACH antenna; `floor` drops reports at or below that SNR (WSPR's decoding edge).
+    reports on EACH antenna; `floor` drops reports at or below that SNR (WSPR's decoding edge); `min_km` leaves out receivers
+    closer than that.
     Returns {'table', 'n', 'mean', 'lo', 'hi', 'median', 'sd', 'near_floor', 'dropped'}."""
     def clip(spots):
         return spots if floor is None else spots[spots["snr"] > floor]
@@ -229,6 +235,9 @@ def power_method(spots_a, spots_b, locs, home, min_spots=1, floor=None, offset=0
         return empty
     t["km_a"] = [geo[w][0] for w in t.index]
     t["bearing_a"] = [geo[w][1] for w in t.index]
+    t = t[t["km_a"] >= min_km]
+    if t.empty:
+        return empty
     t.index.name = "receiver"
     sites = _one_per_site(t)
     g = sites["gain"].to_numpy()
@@ -242,6 +251,34 @@ def power_method(spots_a, spots_b, locs, home, min_spots=1, floor=None, offset=0
         lo = hi = math.nan
     return {"table": t, "sites": sites, "n": n, "mean": mean, "lo": lo, "hi": hi, "median": float(np.median(g)),
             "sd": sd, "near_floor": near_floor, "dropped": dropped}
+
+
+GAIN_OCTANTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]  # centred on the compass points, like the direction charts
+GAIN_QUADRANTS = ["N", "E", "S", "W"]
+
+
+def gain_summary(every, by="octant", edges_km=None, labels=None):
+    """The average relative gain (B minus A) of the receivers that heard both antennas, grouped by direction or by distance.
+    `every` is the per-receiver table the gain charts use (it needs gap, km_a and bearing_a). Receivers at the same place are
+    counted once. `by` is 'octant' (8 directions), 'quadrant' (4) or 'distance'; for distance, `edges_km` are the cut points
+    (so two cuts make three bands) and `labels` names the bands. Returns a table with one row per group: its receivers, the
+    average gain and the 95% range (NaN when a group has none, or only one for the range)."""
+    sites = _one_per_site(every) if len(every) > 1 else every
+    gain = -sites["gap"].to_numpy(float)
+    if by == "distance":
+        edges = sorted(edges_km)
+        group = np.searchsorted(edges, sites["km_a"].to_numpy(float), side="right")
+        names = list(labels) if labels else [f"Band {i + 1}" for i in range(len(edges) + 1)]
+    else:
+        width = 45 if by == "octant" else 90
+        group = (((sites["bearing_a"].to_numpy(float) + width / 2) % 360) // width).astype(int)
+        names = GAIN_OCTANTS if by == "octant" else GAIN_QUADRANTS
+    rows = []
+    for k, name in enumerate(names):
+        values = gain[group == k]
+        mean, low, high = mean_interval(values) if len(values) else (math.nan, math.nan, math.nan)
+        rows.append({"group": name, "receivers": int(len(values)), "mean": mean, "low": low, "high": high})
+    return pd.DataFrame(rows)
 
 
 def direction_advantage(shared, width_deg=45):

@@ -22,11 +22,12 @@ from wspr_data import BAND_CODES, HEADERS, MAX_ROWS, WSPR_URL, WsprError, clean_
 
 # The SNR (dB, in a 2,500 Hz bandwidth) a mode needs for a solid contact. Approximate: CW and voice depend on the operator.
 # "CW spot" is how strong you need to be on this scale for an RBN skimmer to report you, which is what puts you on the spotting
-# sites that POTA hunters watch. It was set from two stations' activations on 16 Oct 2026 (K5OHY and WB0RLJ, each with a WSPR
-# transmitter at the same spot): skimmers reported them from about 3 dB on RBN's own scale, and RBN's scale read about 11 dB
-# above the WSPR-based figure (+12.5 dB for an OCF dipole at 75 W on one day; +7.0 dB for a quarter-wave vertical at 100 W over a
-# week, 354 receivers, day medians 3 to 9 dB, spread 7 dB). Taking about +10 dB, 3 - 10 = -7 dB here.
-MODES = {"CW": -5.0, "CW spot": -7.0, "SSB": 8.0, "FT8": -21.0, "FT4": -17.0, "JS8": -24.0, "WSPR": -28.0}
+# sites that POTA hunters watch. Skimmers report a station from about 3 dB on RBN's own scale, and RBN's scale reads above the
+# WSPR-based figure by an amount that depends on the station. First set from two stations on 16 Oct 2026 (K5OHY +12.5 dB with an
+# OCF dipole at 75 W; WB0RLJ +7 dB with a vertical at 100 W). Re-set on 20 Oct 2026 from a week (13 to 19 Oct) of four stations'
+# RBN spots against the local WSPR stations, with 100 W assumed: WB0RLJ +9.0 dB (749 matches), AE0YM +7.0 (106, 20m only),
+# K4NYM +5.0 (255), WC1D +2.5 (326), each with a spread of about 7 to 9 dB, so about +6 dB. 3 - 6 = -3 dB here.
+MODES = {"CW": -5.0, "CW spot": -3.0, "SSB": 8.0, "FT8": -21.0, "FT4": -17.0, "JS8": -24.0, "WSPR": -28.0}
 CODE_TO_BAND = {code: band for band, code in BAND_CODES.items()}
 EARTH_KM = 6371.0
 
@@ -157,7 +158,66 @@ def _watts(w):
     return "under 0.1 W" if w < 0.1 else f"{w:.1f} W" if w < 10 else f"{w:.0f} W"
 
 
-def headline(result, power_w, mode, margin_db, units="mi"):
+def _dx_cells(result):
+    """The (band, region, margin) cells outside North America with at least one receiver, those with enough receivers to count
+    (`solid`), the solid ones likely to be heard (`good`, best first) and the thin ones likely to be (`hints`, most receivers first)."""
+    reg, count, odds = result["regions"], result["regions_n"], result["chance"]
+    cells = [(b, r, float(reg.at[b, r])) for b in reg.index for r in DX_REGIONS
+             if r in reg.columns and pd.notna(reg.at[b, r]) and count.at[b, r] >= 1]
+    solid = [c for c in cells if count.at[c[0], c[1]] >= THIN]
+    good = sorted((c for c in solid if odds.at[c[0], c[1]] >= 0.6), key=lambda c: -odds.at[c[0], c[1]])
+    hints = sorted((c for c in cells if count.at[c[0], c[1]] < THIN and odds.at[c[0], c[1]] >= 0.6),
+                   key=lambda c: -count.at[c[0], c[1]])
+    return cells, solid, good, hints
+
+
+def short_highlights(result, power_w, mode, margin_db, units="mi", window_min=60):
+    """The dashboard's highlights: a list of (headline, supporting sentence) pairs, each short enough to take in at a glance."""
+    reg, need, bands, dx = result["regions"], result["power_needed"], result["bands"], result["dx"]
+    if bands.empty:
+        return []
+    k = 1.609344 if units == "mi" else 1.0
+    cells, solid, good, hints = _dx_cells(result)
+    out = []
+    if good:
+        out.append(("DX likely: " + ", ".join(f"{b} {_where(r)}" for b, r, _ in good[:4]),
+                    f"Best: {good[0][0]} to {_where(good[0][1])}, {result['chance'].at[good[0][0], good[0][1]]:.0%} of "
+                    f"{int(result['regions_n'].at[good[0][0], good[0][1]])} receivers."))
+    elif hints:
+        out.append(("No solid DX yet", "Only hints, from 1 or 2 receivers each (" + ", ".join(
+            f"{b} {_where(r)}" for b, r, _ in hints[:3]) + "). Expect a hard contact."))
+    elif solid:
+        band, region, _ = max(solid, key=lambda c: c[2])
+        out.append((f"DX is hard at {power_w:g} W {mode}", f"Best chance is {band} to {_where(region)}, needing about "
+                    f"{_watts(float(need.at[band, region]))}."))
+    else:
+        out.append(("No DX paths yet", "Check again later or widen the area."))
+    if len(dx):
+        far = dx.iloc[0]
+        out.append((f"Farthest: {far['rx']}, {_where(far['region'])}", f"{far['km'] / k:,.0f} {units} away on {far['band']}."))
+    home = [r for r in DOMESTIC if r in reg.columns]
+    if home:
+        avg = reg[home].where(result["regions_n"][home] >= THIN).mean(axis=1).dropna().sort_values(ascending=False)  # only regions with enough receivers
+        if len(avg):
+            near = [b for b in avg.index[1:3] if avg[b] >= avg.iloc[0] - 2]
+            out.append((f"US and Canada: {avg.index[0]}" + (f" (also {', '.join(near)})" if near else ""),
+                        f"Strongest, about {avg.iloc[0]:+.0f} dB over the threshold."))
+    rising = [b for b in bands.index if bands.at[b, "Trend"] == "opening" and bands.at[b, "Status"] != "Quiet"]
+    falling = [b for b in bands.index if bands.at[b, "Trend"] == "fading" and bands.at[b, "Status"] != "Quiet"]
+    if rising:
+        out.append((f"{', '.join(rising)} rising", f"These figures average the last {window_min} minutes, so expect it a little "
+                    "stronger now."))
+    if falling:
+        out.append((f"{', '.join(falling)} fading", "It is weaker now than the average shown."))
+    if good and solid:
+        need_more = [c for c in solid if c[2] < margin_db and c[2] >= margin_db - 10]
+        if need_more:
+            band, region, _ = max(need_more, key=lambda c: c[2])
+            out.append((f"More power: {band} {_where(region)}", f"Would need about {_watts(float(need.at[band, region]))}."))
+    return out
+
+
+def headline(result, power_w, mode, margin_db, units="mi", window_min=60):
     """The conditions in a few plain sentences, DX first. Returns a list of markdown strings."""
     reg, count, need, bands, dx = (result["regions"], result["regions_n"], result["power_needed"], result["bands"], result["dx"])
     odds = result["chance"]
@@ -165,12 +225,7 @@ def headline(result, power_w, mode, margin_db, units="mi"):
         return []
     k = 1.609344 if units == "mi" else 1.0
     lines = []
-    cells = [(b, r, float(reg.at[b, r])) for b in reg.index for r in DX_REGIONS
-             if r in reg.columns and pd.notna(reg.at[b, r]) and count.at[b, r] >= 1]
-    solid = [c for c in cells if count.at[c[0], c[1]] >= THIN]
-    good = sorted((c for c in solid if odds.at[c[0], c[1]] >= 0.6), key=lambda c: -odds.at[c[0], c[1]])
-    hints = sorted((c for c in cells if count.at[c[0], c[1]] < THIN and odds.at[c[0], c[1]] >= 0.6),
-                   key=lambda c: -count.at[c[0], c[1]])
+    cells, solid, good, hints = _dx_cells(result)
     if good:
         picks = [f"**{band} to {_where(region)}** ({odds.at[band, region]:.0%} of the {int(count.at[band, region])} receivers there)"
                  for band, region, m in good[:4]]
@@ -183,10 +238,13 @@ def headline(result, power_w, mode, margin_db, units="mi"):
                      + ", ".join(f"{b} to {_where(r)}" for b, r, m in hints[:4])
                      + ". Each rests on 1 or 2 receivers, and in a week of checks only about 4 in 10 such regions were really "
                      "spotted, so treat these as hints.")
-    elif cells:
-        band, region, m = max(cells, key=lambda c: c[2])
+    elif solid:
+        band, region, m = max(solid, key=lambda c: c[2])
         lines.append(f"🌍 **DX is hard at {power_w:g} W {mode} right now.** The best chance is {band} to {_where(region)}, "
                      f"which would need about {_watts(float(need.at[band, region]))}.")
+    elif cells:
+        lines.append(f"🌍 **DX is hard at {power_w:g} W {mode} right now.** The only receivers outside North America that heard "
+                     "the stations near you are 1 or 2 per region, too few to say how much power would be needed.")
     else:
         lines.append(f"🌍 **No DX paths show up yet:** nobody outside North America heard the stations near you. "
                      "Check again later or widen the area.")
@@ -194,8 +252,8 @@ def headline(result, power_w, mode, margin_db, units="mi"):
         far = dx.iloc[0]
         lines.append(f"The farthest receiver that would hear you is **{far['rx']}** in {_where(far['region'])}, "
                      f"{far['km'] / k:,.0f} {units} away on {far['band']}.")
-    if good and cells:
-        need_more = [c for c in cells if c[2] < margin_db and c[2] >= margin_db - 10]
+    if good and solid:
+        need_more = [c for c in solid if c[2] < margin_db and c[2] >= margin_db - 10]
         if need_more:
             band, region, m = max(need_more, key=lambda c: c[2])
             lines.append(f"With more power: {band} to {_where(region)} would need about {_watts(float(need.at[band, region]))}.")
@@ -214,9 +272,14 @@ def headline(result, power_w, mode, margin_db, units="mi"):
     moves = ([f"{', '.join(rising)} {'is' if len(rising) == 1 else 'are'} opening up"] if rising else []) +             ([f"{', '.join(falling)} {'is' if len(falling) == 1 else 'are'} fading"] if falling else [])
     if moves:
         lines.append("Right now " + " and ".join(moves) + ".")
+    if rising:
+        lines.append(f"{', '.join(rising)} {'is' if len(rising) == 1 else 'are'} rising, and the figures are an average of the "
+                     f"last {window_min} minutes, so " + ("expect "
+                     if window_min <= 30 else "try the 30 minute look-back, and expect ")
+                     + ("it" if len(rising) == 1 else "them") + " to be a little stronger now than shown.")
     home = [r for r in DOMESTIC if r in reg.columns]
     if home:
-        avg = reg[home].mean(axis=1).dropna()
+        avg = reg[home].where(count[home] >= THIN).mean(axis=1).dropna()  # only regions with enough receivers
         if len(avg):
             top = avg.sort_values(ascending=False)
             best = top.index[0]
@@ -254,7 +317,7 @@ def analyze(spots, home, power_w, mode, end, window_min=60, antenna_db=0.0, marg
     s = spots[(spots["time"] > start) & (spots["time"] <= end)].copy()
     empty = {"receivers": pd.DataFrame(), "bands": pd.DataFrame(), "regions": pd.DataFrame(), "regions_n": pd.DataFrame(),
              "power_needed": pd.DataFrame(), "dx": pd.DataFrame(), "chance": pd.DataFrame(), "regions_tx": pd.DataFrame(),
-             "n_spots": 0, "n_tx": 0}
+             "series": {}, "n_spots": 0, "n_tx": 0}
     if s.empty:
         return empty
     s["adj"] = s["snr"] + (your_dbm - s["power"]) + antenna_db  # the SNR you would have had at that receiver
@@ -287,6 +350,11 @@ def analyze(spots, home, power_w, mode, end, window_min=60, antenna_db=0.0, marg
                       "Farthest good receiver": far["rx"].iloc[0] if len(far) else "",
                       "Farthest good region": far["region"].iloc[0] if len(far) else ""})
     bands = pd.DataFrame(bands).set_index("Band")
+    s["bin"] = ((s["time"] - start).dt.total_seconds() // 300).astype(int)  # the strength of each band in 5-minute steps
+    steps = int(math.ceil(window_min / 5))
+    strength = s.groupby(["band", "bin"])["adj"].median()
+    series = {band: pd.Series([float(strength[(band, i)]) if (band, i) in strength.index else float("nan") for i in range(steps)])
+              .rolling(3, center=True, min_periods=1).mean().where(lambda v: v.notna()).tolist() for band in bands.index}
 
     regions = rec.groupby(["band", "region"])["margin"].quantile(0.75).unstack()
     regions_n = rec.groupby(["band", "region"]).size().unstack(fill_value=0)
@@ -303,4 +371,4 @@ def analyze(spots, home, power_w, mode, end, window_min=60, antenna_db=0.0, marg
 
     dx = rec[rec["margin"] >= 0].sort_values("km", ascending=False).head(12)
     return {"receivers": rec, "bands": bands, "regions": regions, "regions_n": regions_n, "power_needed": power_needed,
-            "dx": dx, "chance": chances, "regions_tx": regions_tx, "n_spots": len(s), "n_tx": int(s["tx"].nunique())}
+            "dx": dx, "chance": chances, "regions_tx": regions_tx, "series": series, "n_spots": len(s), "n_tx": int(s["tx"].nunique())}
