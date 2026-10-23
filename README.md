@@ -32,18 +32,26 @@ See where your signal is heard, how strong it is, and how conditions change. Map
 
 ## Quick start
 
+**Just looking? Click Try an example** in the sidebar. It loads a real WSPR antenna test (a 40m loop against a 20m dipole) and shows the result, so you can see what the program does before you use your own data. **Try a long-test example** loads a nine-and-a-half-hour test by Dale, N3HXZ, a POTA Performer against a Chameleon MPAS Lite, switched every 30 minutes. **Try an RBN example** loads a quick CW check on the Reverse Beacon Network, a 40m loop on 14069.5 kHz against a 20m dipole on 14070.5 kHz, told apart by frequency.
+
+**With your own data:**
+
 1. Open the site (or [run it locally](#run-it-locally)).
 2. Type your **callsign** in the sidebar.
-3. Pick where the spots come from, then click **Load spots**.
-4. Use the filters in the sidebar, and download the map or a PDF report if you want to share it.
+3. Pick where the spots come from, then click **Load spots**. To test antennas, open the **Compare antennas** page: it shows the three steps (load your spots, say how you switched, read the result) and explains how to run a good test.
+4. Use the filters in the sidebar, and download the map, a PDF report, or the spots and tables as CSV if you want to share or keep them.
 
-The hosted site does not remember your settings; a local copy does (in `settings.json`). Free hosting can fall asleep: click the button to wake it.
+**Share what you are looking at.** Once spots are loaded, the sidebar shows a link to this view and your browser's address bar holds the same link. Send it to someone and they land on the same callsign, date and band, with the spots already loaded. The same link also brings your sidebar choices back if you refresh the page or your computer sleeps. On the Compare page the link also carries the whole test: the antenna names, how you switched, the start and order, and the averaging choices, so the person you send it to sees the same verdict.
+
+Free hosting can fall asleep: click the button to wake it. A local copy also remembers your settings in `settings.json`.
 
 ## Getting your spots
 
-**RBN: Download by date.** Pick a day or a range (up to 7 days). Works for anything up to yesterday (UTC), because RBN publishes a day's file after that day ends. Only spots of your callsign are kept.
+In the sidebar, choose **Spots from: RBN or WSPR**. For RBN, choose **Download a day** or **Paste spots**.
 
-**RBN: Paste from RBN site.** For spots from the last few minutes or hours, and for quick tests. Look up your callsign on [reversebeacon.net](https://www.reversebeacon.net/), copy the spot rows, paste them into the box, and click Load spots. The app reads each field by what it looks like, so odd spacing is fine.
+**RBN, Download a day.** Pick a day or a range (up to 7 days). Works for anything up to yesterday (UTC), because RBN publishes a day's file after that day ends. Only spots of your callsign are kept.
+
+**RBN, Paste spots.** For spots from the last few minutes or hours, and for quick tests. Look up your callsign on [reversebeacon.net](https://www.reversebeacon.net/), copy the spot rows, paste them into the box, and click Load spots. The app reads each field by what it looks like, so odd spacing is fine.
 
 **WSPR.** Pick a date (today works) and click Load spots. The app looks up WSPR spots sent by the callsign you entered, so use the callsign your WSPR transmitter sends. Reports take about 5 minutes to arrive in full; a newer cycle is still used and marked *may be incomplete*. Click Load spots again to refresh.
 
@@ -54,8 +62,8 @@ WSPR differs from RBN in a few ways: SNR is mostly negative (about -30 to +5 dB)
 - Paths from you to every station that heard you, drawn as great circles and coloured by band.
 - Dots sized and coloured by SNR. Click one for every spot from that station. The farthest station is circled.
 - Filters: **Band**, **UTC time window** (one-minute steps), and **Minimum SNR** (RBN). They update the map instantly.
-- With Compare mode off, a **Session report** tab for the whole day, across every band you loaded: when you were heard on each band, a band-by-hour grid (spots, farthest reach or median signal), a band scorecard, and how many stations heard you on each band by region (US East/Central/West, Canada, Europe, Asia and so on). It counts time you were *heard*, not time on the air, because a spot only exists when someone heard you.
-- With Compare mode off, a **World view from your station** below the map: the same azimuthal map, coloured by average SNR or by how many stations heard you in each direction and distance cell.
+- A **Session report** tab for the whole day, across every band you loaded: when you were heard on each band, a band-by-hour grid (spots, farthest reach or median signal), a band scorecard, and how many stations heard you on each band by region (US East/Central/West, Canada, Europe, Asia and so on). It counts time you were *heard*, not time on the air, because a spot only exists when someone heard you.
+- A **World view from your station** below the map: the same azimuthal map, coloured by average SNR or by how many stations heard you in each direction and distance cell.
 - Stats above the map, a compass chart of your spots by direction below it, and a sortable spot table.
 - Map style (light, dark, satellite, street), miles or kilometres, and **Download map** (a standalone HTML file).
 - **Download report (PDF)** next to it: key numbers, the session report, direction chart and the stations that heard you.
@@ -64,7 +72,7 @@ Your location comes from the grid you typed, else the RBN skimmer list, else the
 
 ## Compare two antennas
 
-Tick **Compare two antennas or tests**. Name your antennas under *Name your antennas* if you like.
+Open **Compare antennas** in the menu. It shows three steps: load your spots, say how you switched, and read the result. What you load on **My spots** is already there, and the other way round. Name your antennas under *Name your antennas* if you like.
 
 ### With WSPR (the best way to test antennas)
 
@@ -89,6 +97,7 @@ Send plenty of CQs on each side, at the same power and speed (or enter the power
 
 ### Reading the result
 
+- **The PDF report.** Under the verdict button, *Download report (PDF)* starts with a **Test setup** section: the transmitter, date and band, how the antennas were switched, the power, and the block table or the list of transmissions, so someone else can repeat the analysis from the report alone. The averaging settings and filters are stated beside the receiver results. The tables can also be downloaded as CSV.
 - **Result.** The verdict first, in plain English, with the evidence and any caveats. Then a scoreboard, who heard you on each side, and a timeline of every spot in the order it happened. **Download report (PDF)** sits under the verdict. A collapsed **Data used** box says how many spots and receivers went in (loaded, in the test, compared, and how many have 5, 20 and 40 or more reports on each antenna) and what was left out and why; it is in the PDF too.
 - **Direction & distance.** A world map centred on your station (distance from the centre is true distance, angle is true compass bearing), coloured by direction and distance: which antenna is stronger, or the SNR with A or B, or just the receivers (filled where both antennas were heard, open where only one was), so you can see whether an antenna is getting out toward Europe, Asia or Oceania; zoom between nearby, half the world and the whole world. Then a rose chart of how much stronger one side is toward each direction (longer bar means a bigger difference; blue A, orange B; fainter or hatched for fewer receivers; pick 45, 30 or 15 degree sectors, or one direction to see its numbers), the average SNR by direction, and the same by distance range.
 - **Receiver by receiver.** Every station that heard both sides, as a chart and a table. The table gives each station's **relative gain** (B's SNR minus A's, so A is the reference and B the test), and two charts plot that gain against direction and against distance. You choose how each station's reports are averaged (SNR in dB, or linear power) and the minimum number of reports a station needs on each antenna, so you can watch the answer settle as the weak, thin stations drop out. Pick one station (sorted A to Z, by distance, by direction or by reports) to see every report from it against time for both antennas, with each antenna's average, the relative gain and its 95% range, which shows fading and band changes at a glance. Under the relative gain charts, a **summary table** gives the average gain by direction (eight octants or four quadrants) and by distance (Short, Medium and Long, with cut points you can change), with the number of receivers and a 95% range for each; it is in the PDF too. For a long-block test, a **Relative gain over time** view averages the gain in windows that are a few block lengths long (20 minutes with 10 minute blocks, 40 with 20 minute blocks) (all stations, with a 95% range, plus the picked station), so a band opening during the test shows up instead of being averaged away. The difference cancels each station's own noise level, so stations can be compared with each other.
@@ -112,7 +121,7 @@ Why they can disagree: averaging in dB treats every report as equal (and the app
 
 **A limit on weak signals.** WSPR decodes down to about -28 dB under good conditions. A signal weaker than that is never reported at all, so an average of the reports you do have is not an average of everything that was sent. The app can ignore reports near that floor as a check on how much they matter, but that does not correct for the missing ones. Compare how many receivers heard each antenna as well as how strong they were, especially when one antenna is much weaker.
 
-On the **Linear average** tab, and in the table on **Receiver by receiver**, you can see both answers side by side and change the minimum number of reports a receiver needs. In a long-block test the minimum starts at 20 reports. Under *Leave out some reports or receivers* you can also ignore reports at or below -27 dB (the edge of what WSPR decodes) and leave out receivers closer than a distance you choose, such as ones that could hear you by ground wave; both change the averages on those two tabs, not the verdict. If the two agree within 1 dB, that is a useful consistency check, but not independent proof, because both use the same reports. If they disagree substantially, find out why before drawing a conclusion. For a short alternating test the paired dB method is generally preferable. For a longer, well-balanced test the linear-power method is another useful measure, though a few very strong reports can dominate it. Collect more data before believing a small difference.
+On the **Linear average** tab, and in the table on **Receiver by receiver**, you can see both answers side by side and change the minimum number of reports a receiver needs. In a long-block test the minimum starts at 20 reports. Under *Leave out some reports or receivers* you can also ignore reports at or below -27 dB (the edge of what WSPR decodes) and leave out receivers closer than a distance you choose, such as ones that could hear you by ground wave; both change the averages on those two tabs, not the verdict. A third setting drops a whole station when more than a share you choose of its reports are at the floor, for stations that only hear you at the edge. If the two agree within 1 dB, that is a useful consistency check, but not independent proof, because both use the same reports. If they disagree substantially, find out why before drawing a conclusion. For a short alternating test the paired dB method is generally preferable. For a longer, well-balanced test the linear-power method is another useful measure, though a few very strong reports can dominate it. Collect more data before believing a small difference.
 
 #### The math, step by step
 
@@ -183,6 +192,8 @@ $$\bar{G} = \frac{1}{N} \sum_{r=1}^{N} G_r$$
 
 The **Band conditions** page (in the sidebar menu) tells you which bands are open and where a signal like yours would be heard, which helps when you are deciding whether to change band at a park. It takes the WSPR stations transmitting near you (your grid square or callsign, within an area you choose) over the last half hour (or the last hour or two, your choice; a shorter look-back follows a band that is opening or fading more closely), and restates each report for **your power and mode**: SNR moves dB for dB with power, and each mode needs a minimum SNR, so the gap is your margin.
 
+**Look closer at a band.** Under the band tiles, pick one or more bands. They are outlined in the tiles and the table, the map shows only those bands, and a short summary of each (how many receivers heard it, the farthest good one, the best and hardest regions) appears beside the map. With no location entered, **Try an example location** shows the page working.
+
 The page is a dashboard you can read at a glance. A tile for each band shows its status (an arrow means it is rising or fading), a few small bars for how its signal strength moved over the look-back, and how much data is behind it. A strip below shows the sun and the MUF, each as a number and a one-word reading; the MUF is a model estimate and does not limit what WSPR shows is working. Then comes the region by band grid (cells with only 1 or 2 receivers show the count, not a percentage), a few short highlights, and a full-width map of the receivers that would hear you, where you can pick a band or two to show only those and switch on a day and night line (the gray line, where the low bands tend to do best). The detailed tables, the full space weather and MUF explanations, the farthest receivers and how far to trust it all are in tabs at the bottom.
 
 At the top of the page a **Space weather** card shows the sun and Earth's magnetic field right now from NOAA's Space Weather Prediction Center (solar flux and whether it has been rising or falling, the sunspot number, the Kp and A indexes, the X-ray flare level, the solar wind speed and its magnetic field direction, Bz), with a few plain sentences on what they mean for HF. The numbers are worldwide, not your path, so the WSPR figures below are what is actually working near you; the card explains the why and warns of change. It updates every 15 minutes and disappears if NOAA cannot be reached.
@@ -206,6 +217,16 @@ Once your location is known, a **MUF near you** card shows the maximum usable fr
 The differences between stations (power, antenna, local noise) are smaller than the spread within each. But of the skimmers the figures said could hear a station, only about 1 in 10 spotted it below the usual RBN spotting level (about 2 dB above the CW figure), 4 in 10 at a margin of 0 to 5 dB over it, 5 in 10 at 5 to 10 dB and about 7 in 10 at 15 dB or more (from the Omaha station with the most data), because skimmers are not all listening and the station was not calling CQ the whole time. 30m was the least consistent band, and DX beyond 3,000 miles had too few matches to check. A band marked **opening** is usually a little stronger now than the figures show, since they average the look-back.
 
 It is a guide good to a few dB, not a promise: it only counts receivers that heard the nearby WSPR stations (so with more power than they used you would be heard in more places), WSPR receivers are often quiet sites, and the mode thresholds are approximate. There is a box for how your antenna compares with theirs. The modes are CW, SSB, FT8 and WSPR, each with the SNR it needs. **CW** is the strength a hunter needs to copy you. Being spotted by an RBN skimmer, which is what gets you onto the spotting sites, takes about 2 dB more, because it also needs a skimmer that is listening and you calling CQ. That gap was measured from real CW activations (first two stations, then a week of four stations, see the table above), so it is a guide from a small sample: keep a margin if you want to be spotted. Find yourself by callsign, by grid square (a park, say), or with a **Use my location** button that asks your browser for your position; the area around you can be set in miles or kilometres.
+
+## Checked against a published study
+
+Dale Ostergaard, N3HXZ, published a long WSPR test of two vertical antennas, "Comparing Performance between an Elevated and a Ground mounted Vertical Antenna" (31 August 2026): a POTA Performer elevated vertical against a Chameleon MPAS Lite ground-mounted system (with its matching unit, not a bare whip), on 20m at 1 W, switched in 30 minute blocks from 12:00 to 21:30 UTC on 26 August 2026, using the stations with 40 or more spots on each antenna. His table gives each station's relative gain. Loading his transmitter and date, with that schedule, gives the same answers in this program:
+
+- On the 27 stations in his table, the program's relative gain differs from his by 0.00 dB on average, and by no more than 0.12 dB at any one station.
+- The average over 500 to 1,500 miles is 3.87 dB here against 3.86 dB in his table.
+- Over 1,500 to 2,500 miles it is 5.81 dB here against his 6.06 dB, because the program also counts four more stations that met the 40-spot rule (ON5KQ, W0AY, WA3TTS and WA7LNW).
+
+Click **Try a long-test example** in the app to see it. The automated check in `tests/test_dale_study.py` repeats the comparison against his table. His article also works out the expected gain by hand from antenna measurements and compares it with the WSPR result, which is worth reading on his site, [n3hxz.net](https://www.n3hxz.net/).
 
 ## Run it locally
 
@@ -257,6 +278,7 @@ The **Help and README** page in the app shows this README, so the instructions a
 | "No location for ..." under the stats | Those skimmers are not in RBN's node list, so they are counted but not drawn. |
 | Compare found only one frequency group | Your spots are on one frequency, or your two tests were less than 0.1 kHz apart. Use a different frequency for each antenna. |
 | A few WSPR cycles show only one or two receivers while the rest show dozens | Usually one receiver with a wrong clock. The app ignores them and says how many. |
+| "wspr.live seems to be missing most of the reports for ... of your transmissions" | wspr.live's own data has gaps, seen at the start of every hour in some 2024 dates. Spots from those transmissions are undercounted, which can favour the antenna that was on the air at other times. A recent test is not affected. |
 | "Not enough data yet" / too close to call | Run more transmissions per antenna (see above). |
 | Downloading is slow | A day of RBN data is a large file. Each day in a range is a separate download. Results are cached for an hour. |
 
@@ -264,15 +286,22 @@ The **Help and README** page in the app shows this README, so the instructions a
 
 | File | Purpose |
 | --- | --- |
-| `web.py` | The Streamlit app |
+| `web.py` | The Streamlit app's entry point: page setup and navigation |
+| `views/` | One file per page: `spots_view.py` (My spots), `compare_view.py` (comparing antennas), `conditions_view.py` (Band conditions), `compare_page.py`, `inputs.py` (the sidebar choices and loading both spots pages share), `test_link.py` (a whole test in a link), `help_view.py` (Help and README) |
+| `ui_common.py` | Settings, colours, constants and small helpers shared by the pages |
+| `data_sources.py` | Getting spots: the RBN download and pasted rows, WSPR from wspr.live, the skimmer list |
+| `maps.py` | The interactive map of who heard you |
+| `charts.py` | The charts and tables for comparisons and the session report |
+| `pdfs.py` | Builds the PDF reports from those charts and tables |
 | `compare_stats.py` | The A/B maths and the plain-English verdict |
 | `report_pdf.py` | Lays out the PDF reports |
+| `tests/` | Automated checks of the calculations and the pages. Run them with `python -m unittest discover -s tests -v`; set `RBN_TEST_NETWORK=1` to include the ones that use the internet |
 | `rbn_data.py` | Skimmer list, callsign location lookup, grid conversion |
 | `wspr_data.py` | Fetches WSPR spots |
 | `world_map.py` | Draws the world map centred on your station |
 | `session_report.py` | Builds the session report: timeline, band-by-hour grid, scorecard and regions |
 | `conditions.py` | Band conditions: nearby WSPR stations restated for your power and mode |
-| `dashboard.py` | The HTML for the Band conditions dashboard: banner, band tiles, sun strip, region grid and highlights |
+| `dashboard.py` | The HTML for the Band conditions dashboard: band tiles, sun strip, region grids and highlights |
 | `space_weather.py` | Current space weather from NOAA and a short plain reading of it |
 | `ionosphere.py` | MUF and foF2 near you from the nearest working ionosondes (GIRO data via KC2G) |
 | `world_land.npz`, `build_world_mask.py` | The land/ocean grid the map is drawn from, and the one-off script that built it |
