@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import pandas as pd
 import streamlit as st
 
+import example_data
 from data_sources import download_rbn_day, load_wspr, parse_pasted_data, resolve_home
 from ui_common import (
     BAND_COLORS,
@@ -73,28 +74,45 @@ def _link_for(ss, callsign, grid, source, span, days, units, band, extra=None):
     return link
 
 
+def _load_saved(which):
+    """Puts a saved example's real spots into the session, as if Load spots had just fetched them. False when the example's files
+    are missing, and the caller then loads it from the internet instead."""
+    saved = example_data.load(which)
+    if saved is None:
+        return False
+    meta, spots = saved
+    ss = st.session_state
+    ss.raw, ss.callsign, ss.kind, ss.tx_call = spots, meta["callsign"], meta["kind"], meta["tx_call"]
+    ss.locs = (receiver_locations(spots) if len(spots) else {}) if meta["kind"] == "WSPR" else None
+    ss.file_date, ss.home, ss.notice, ss.loaded_at = meta["file_date"], tuple(meta["home"]), None, None
+    ss["setup_ok"] = True
+    return True
+
+
 def start_example(which):
     """The example buttons, each set up and loaded so the result shows straight away. 'map' is K5OHY's Reverse Beacon Network
     spots of 23 Oct 2025 on the My spots page. On the Compare page, 'rbn' is a quick CW check by frequency (27 Sep 2026, loop on 14069.5 against dipole on 14070.5), 'quick' is the same day's test of 12 transmissions alternating a 40m loop and a
-    20m dipole, and 'long' is Dale Ostergaard N3HXZ's test of 26 Aug 2026: a POTA Performer against a Chameleon MPAS Lite system,
+    20m dipole, and 'long' is Dale Ostergaard N3HXZ's test of 26 Aug 2026: a Performer (tuned elevated quarter-wave) against an untuned 17 ft whip on a 5:1 unun at ground level,
     alternating 30 minute blocks from 12:00 to 21:30 UTC, judged on stations with 40 or more reports per antenna as in his
     write-up."""
     ss = st.session_state
     if which == "long":
         ss.update(callsign_in="N3HXZ", grid_in="", src_in=WSPR_SOURCE, span_in="Single day", day_in=date(2026, 8, 26),
-                  band_choice="20m", cmp_name_a="Chameleon MPAS Lite (ground-mounted)", cmp_name_b="POTA Performer (elevated)",
-                  test_mode="In long blocks", rx_min_reports_blk=40, _autoload=True, _example="long")
+                  band_choice="20m", cmp_name_a="17 ft whip + 5:1 unun (ground)", cmp_name_b="Performer (tuned, elevated)",
+                  test_mode="In long blocks", rx_min_reports_blk=40, _example="long")
     elif which == "rbn":
         ss.update(callsign_in="K5OHY", grid_in="", src_in="Download by date", span_in="Single day", day_in=date(2026, 9, 27),
-                  band_choice="20m", cmp_name_a="40m loop, 20 ft", cmp_name_b="20m dipole, 40 ft", _autoload=True, _example="rbn")
+                  band_choice="20m", cmp_name_a="40m loop, 20 ft", cmp_name_b="20m dipole, 40 ft", _example="rbn")
     elif which == "quick":
         ss.update(callsign_in="K5OHY", grid_in="", src_in=WSPR_SOURCE, span_in="Single day", day_in=date(2026, 10, 4),
                   band_choice="20m", cmp_name_a="40m loop, 20 ft", cmp_name_b="20m dipole, 40 ft",
                   test_mode="After every transmission", test_cycles=12, test_start="18:00", test_order="A, B, B, A …",
-                  _autoload=True, _example="quick")
+                  _example="quick")
     else:
         ss.update(callsign_in="K5OHY", grid_in="", src_in="Download by date", span_in="Single day", day_in=date(2025, 10, 23),
-                  band_choice="All", _autoload=True, _example="map")
+                  band_choice="All", _example="map")
+    if not _load_saved(which):  # no saved copy: fetch it live, as a click on Load spots would
+        ss["_autoload"] = True
 
 
 _SETUP_KEYS = ("cmp_name_a", "cmp_name_b", "test_mode", "test_cycles", "test_start", "test_order", "avg_floor", "avg_weak",
@@ -123,8 +141,9 @@ def example_banner(ss):
     """A note above the results explaining a loaded example, or nothing."""
     which = ss.get("_example")
     if which == "long":
-        st.info("This is an example: a real long WSPR test by Dale Ostergaard, N3HXZ, on 26 August 2026, at 1 W on 20m. A POTA "
-                "Performer elevated vertical (B) and a Chameleon MPAS Lite ground-mounted system with its matching unit (A) took "
+        st.info("This is an example: a real long WSPR test by Dale Ostergaard, N3HXZ, on 26 August 2026, at 1 W on 20m. A "
+                "Performer, a tuned elevated quarter-wave with two raised radials (B), and an untuned 17 ft whip on a 5:1 matching unit, ground-mounted "
+                "with two radials (A), took "
                 "turns in 30 minute blocks from 12:00 to 21:30 UTC. As in his write-up, only stations with 40 or more reports on "
                 "each antenna are used (the slider on the Receiver by receiver tab). It was set up as 30 minute blocks from 12:00 UTC, "
                 "A first. Dale publishes the study on his site, [n3hxz.net](https://www.n3hxz.net/). To try your own, enter your "
@@ -141,6 +160,8 @@ def example_banner(ss):
     elif which == "map":
         st.info("This is an example: the Reverse Beacon Network stations that heard K5OHY's CW calls on 23 October 2025. To see "
                 "your own, enter your callsign and a date and click Load spots.")
+    if which and example_data.available(which):
+        st.caption("Opened from a saved copy of the real data, so it appears at once. Your own spots are downloaded live.")
     if which:
         st.button("Use my own data instead", key="banner_own", on_click=start_over, kwargs={"clear_callsign": True},
                   help="Clears the example and the callsign and dates it filled in, so you can enter your own.")
